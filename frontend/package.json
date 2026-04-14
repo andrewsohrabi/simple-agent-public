@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "node --test src/panelState.test.js src/demoUsers.test.js src/scenarios.test.js src/memoryViews.test.js"
   },
   "dependencies": {
     "react": "^18.2.0",
