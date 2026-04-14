@@ -8,6 +8,13 @@ This submission compares three memory modes for the starter Deep Agents chat app
 
 The core requirement for this take-home is **cross-conversation persistence**. Same-chat recall is not long-term memory.
 
+## BLUF
+
+- This repo compares three memory strategies for a chat agent and evaluates the real requirement for this take-home: cross-session persistence, not same-session transcript recall.
+- `none` is the control. `facts` stores structured latest-state memory plus event history. `summary` stores one compact latest-state narrative and only adds targeted temporal history for explicit prior-state questions.
+- Recommendation: ship `facts` as the MVP. It is the easiest strategy to inspect, validate, and update correctly when user facts change or contradict earlier turns.
+- LangChain resolves and invokes the configured chat models, Deep Agents provides the runtime, and the application code owns prompt injection, persistence, and memory update semantics.
+
 ## Quick Start
 
 ### 1. Install and configure
@@ -17,7 +24,7 @@ uv sync
 cp .env.example .env
 ```
 
-Add at least one provider key before running live chat:
+Add the provider key for the model path you plan to run. The documented default review flow, CLI, harness, and LLM extractor benchmark path use Anthropic-backed models, so the simplest default setup is `ANTHROPIC_API_KEY`. If you only set an OpenAI or Google key, also override the model selection to a matching provider.
 
 ```bash
 ANTHROPIC_API_KEY=...
@@ -88,16 +95,20 @@ By default it uses:
 - facts extractor model: `anthropic:claude-haiku-4-5`
 - parallel jobs: `15` (full current scenario-by-strategy matrix)
 
+Unless you override `--model`, this path uses the default Anthropic chat model.
+
 ### 4. Run the regression tests
+
+Recommended in sandboxed or reviewer environments:
+
+```bash
+env UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
+```
+
+If your environment allows the default `uv` cache path, the shorter equivalent is:
 
 ```bash
 uv run pytest -q
-```
-
-If your environment blocks `uv` cache writes:
-
-```bash
-UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
 ```
 
 ### 5. Manual CLI path
@@ -107,6 +118,7 @@ uv run chat --memory-type facts --user-id demo_user
 ```
 
 Use the CLI when you want to inspect one memory mode directly rather than compare the three modes side by side.
+Unless you pass `--model`, this path uses the default Anthropic chat model.
 
 ## What “memory” means here
 
@@ -316,7 +328,7 @@ Purpose:
 ### Test suite
 
 ```bash
-uv run pytest -q
+env UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
 ```
 
 Purpose:
@@ -494,6 +506,8 @@ uv run python benchmark_facts_extractor.py
 
 Purpose:
 - compare deterministic facts extraction with LLM-based extraction against a gold set
+
+The deterministic benchmark cases run locally. The default LLM comparison arm uses `anthropic:claude-haiku-4-5`, so unauthenticated runs keep the `llm` row at zero scored cases and record auth errors per case.
 
 Current checked-in sample:
 

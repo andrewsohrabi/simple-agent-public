@@ -527,6 +527,7 @@ def run_harness(
     stream_output: bool,
     jobs: int,
 ) -> dict[str, Any]:
+    """Run the full scenario matrix, keeping each restart pair sequential."""
     artifact_root.mkdir(parents=True, exist_ok=True)
     results: dict[str, Any] = {
         "config": {
@@ -560,6 +561,8 @@ def run_harness(
             )
 
     max_workers = max(1, min(jobs, len(tasks)))
+    # Each scenario/strategy pair gets its own user id, so different pairs can
+    # run in parallel even though each pair must keep session 1 -> session 2 in order.
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
@@ -704,6 +707,7 @@ def _run_scenario_strategy(
     stream_output: bool,
     print_lock: threading.Lock,
 ) -> dict[str, Any]:
+    """Run one scenario/strategy pair end to end and capture its artifacts."""
     scenario = task["scenario"]
     scenario_name = scenario["name"]
     strategy = task["strategy"]
@@ -722,6 +726,7 @@ def _run_scenario_strategy(
             )
 
     session_outputs = []
+    # Session 1 must finish and persist memory before session 2 tests restart recall.
     for index, session_messages in enumerate(scenario["sessions"], start=1):
         if stream_output:
             prompts = " | ".join(session_messages)

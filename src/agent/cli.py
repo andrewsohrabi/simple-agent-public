@@ -57,6 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main():
+    """Run the interactive CLI loop and finalize session memory on exit."""
     load_dotenv()
 
     args = build_parser().parse_args()

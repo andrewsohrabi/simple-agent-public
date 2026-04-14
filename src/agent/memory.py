@@ -265,6 +265,7 @@ def consolidate_facts_memory(
     *,
     now: str | None = None,
 ) -> dict[str, Any]:
+    """Deterministically extract durable user facts from transcript content."""
     updated = normalize_facts_memory(deepcopy(current_memory))
     timestamp = now or _utc_now()
 
@@ -300,6 +301,7 @@ def build_summary_memory_from_facts(
     now: str | None = None,
     max_chars: int = 500,
 ) -> dict[str, Any]:
+    """Project the latest structured facts into one bounded summary string."""
     timestamp = now or _utc_now()
     fact_phrases = _facts_to_summary_phrases(normalize_facts_memory(facts_memory))
     prior_summary = str((previous_summary or {}).get("summary") or "").strip()
@@ -333,6 +335,7 @@ def llm_consolidate_facts_memory(
     extractor_model: str,
     now: str | None = None,
 ) -> dict[str, Any]:
+    """Use a model to canonicalize durable facts for hybrid or LLM extraction."""
     timestamp = now or _utc_now()
     prompt = _build_facts_llm_prompt(current_memory, transcript, timestamp)
     model = init_chat_model(extractor_model)
@@ -748,14 +751,6 @@ def _bounded_summary(summary: str, max_chars: int) -> str:
         return summary
     clipped = summary[: max_chars + 1].rsplit(" ", 1)[0].rstrip(".,; ")
     return clipped + "."
-
-
-def _summary_is_replaced(prior_summary: str, new_summary: str) -> bool:
-    if "transferred to" in new_summary.lower():
-        return True
-    prior_lower = prior_summary.lower()
-    new_lower = new_summary.lower()
-    return "regulatory affairs" in prior_lower and "quality assurance" in new_lower
 
 
 def _clean_preference(value: str) -> str:

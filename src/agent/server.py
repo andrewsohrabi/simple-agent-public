@@ -67,6 +67,9 @@ def build_memory_response(
     *,
     snapshot: tuple[object, Path | None] | None = None,
 ) -> dict[str, object]:
+    """Build the shared memory payload returned by inspection and mutation routes."""
+    # GET, DELETE, and finalize all reuse this builder so the frontend sees one
+    # stable response shape no matter how the memory snapshot was produced.
     memory, memory_path = snapshot or read_memory_snapshot(memory_type, MEMORY_ROOT, user_id)
     facts_events, facts_events_path = read_facts_events_snapshot(
         memory_type,
