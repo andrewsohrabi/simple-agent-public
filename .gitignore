@@ -1,5 +1,7 @@
 # Environment
 .env
+.env.*
+!.env.example
 .venv/
 
 # Python
@@ -9,6 +11,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
 # IDE
 .vscode/
@@ -22,3 +25,18 @@ uv.lock
 
 # Node
 node_modules/
+
+# Runtime memory artifacts
+memory_store/
+artifacts/
+
+# Local Codex helpers
+.codex-local/
+.claude/
+
+# Local/private assets
+Backend Take Home.pdf
+
+# Keep local working docs out of git; only the repo README stays tracked
+*.md
+!/README.md

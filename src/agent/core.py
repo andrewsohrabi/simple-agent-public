@@ -1,9 +1,11 @@
 from langchain.chat_models import init_chat_model
 from deepagents import create_deep_agent
 
+DEFAULT_MODEL_STR = "anthropic:claude-opus-4-6"
+
 
 def make_agent(
-    model_str: str = "anthropic:claude-haiku-4-5-20251001",
+    model_str: str = DEFAULT_MODEL_STR,
     system_prompt: str | None = None,
 ):
     """Create a deep agent with the specified model provider.
