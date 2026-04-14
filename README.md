@@ -505,18 +505,33 @@ uv run python benchmark_facts_extractor.py
 ```
 
 Purpose:
-- compare deterministic facts extraction with LLM-based extraction against a gold set
+- compare deterministic facts extraction with LLM-based extraction against fixed expected-facts fixtures
+- validate only the extraction layer, not the end-to-end chat agent
 
-The deterministic benchmark cases run locally. The default LLM comparison arm uses `anthropic:claude-haiku-4-5`, so unauthenticated runs keep the `llm` row at zero scored cases and record auth errors per case.
+What it is doing:
+- the “gold benchmark cases” are the hard-coded `CASES` in [benchmark_facts_extractor.py](/Users/andrewsohrabi/projects/codex-sandbox/valkai/simple-agent-public/benchmark_facts_extractor.py:17)
+- each case contains a transcript plus the expected canonical facts dict
+- both extractors are scored by flattening facts into `(category, key, value)` tuples and computing exact match, precision, recall, and F1 over those tuples
+
+Interpretation:
+- a perfect deterministic score means the current rule-based extractor passes the checked regression fixtures
+- it does **not** mean deterministic extraction is universally better than LLM extraction
+- if the selected LLM extractor model is missing provider auth, the `llm` arm is marked `skipped` instead of being shown as zero-quality output
 
 Current checked-in sample:
 
-| Extractor | Cases | Exact | Precision | Recall | F1 |
-| --- | --- | --- | --- | --- | --- |
-| deterministic | 9 | 9 | 1.0 | 1.0 | 1.0 |
-| llm | 0 | 0 | 0.0 | 0.0 | 0.0 |
+| Extractor | Status | Cases | Exact | Precision | Recall | F1 | Reason |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| deterministic | scored | 9 | 9 | 1.0 | 1.0 | 1.0 | - |
+| llm | scored | 9 | 4 | 0.7593 | 0.7778 | 0.6926 | - |
 
-That sample reflects a successful deterministic run and an unauthenticated LLM run. It is not a claim that deterministic extraction is universally better.
+In simple terms, these sample results mean:
+- the deterministic extractor got all 9 benchmark cases exactly right
+- the LLM extractor ran successfully on all 9 cases, but only matched all expected facts exactly on 4 of them
+- the LLM extractor still found many of the right facts overall, but it missed or mismatched some expected fields in several cases
+- this table is about structured fact extraction accuracy only; it does not mean the full chat agent is “good” or “bad”
+
+If provider auth is missing in your local environment, the `llm` row will be rendered as `skipped` with a reason instead of as zero-quality output. The checked-in sample above is one successful run, not a claim that deterministic extraction is universally better.
 
 ## Reset memory
 

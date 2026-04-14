@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 from pathlib import Path
 from typing import Any
+
+from dotenv import load_dotenv
 
 from agent.chat_service import DEFAULT_EXTRACTOR_MODEL
 from agent.memory import (
@@ -130,8 +134,11 @@ def compare_flat_facts(expected: dict[str, Any], actual: dict[str, Any]) -> dict
 
 
 def run_benchmark(extractor_model: str, artifact_root: Path) -> dict[str, Any]:
+    load_dotenv()
+    _reset_artifact_root(artifact_root)
     artifact_root.mkdir(parents=True, exist_ok=True)
     results: dict[str, Any] = {"deterministic": [], "llm": []}
+    llm_skip_reason = _llm_skip_reason(extractor_model)
 
     for case in CASES:
         deterministic = flatten_facts_memory(
@@ -147,34 +154,46 @@ def run_benchmark(extractor_model: str, artifact_root: Path) -> dict[str, Any]:
             }
         )
 
-        try:
-            llm_actual = flatten_facts_memory(
-                llm_consolidate_facts_memory(
-                    DEFAULT_FACTS_MEMORY,
-                    case["transcript"],
-                    extractor_model=extractor_model,
-                    now="2026-04-10T12:00:00Z",
-                )
-            )
-            llm_score = compare_flat_facts(case["expected"], llm_actual)
+        if llm_skip_reason:
             llm_result: dict[str, Any] = {
                 "name": case["name"],
                 "expected": case["expected"],
-                "actual": llm_actual,
-                "score": llm_score,
+                "status": "skipped",
+                "reason": llm_skip_reason,
             }
-        except Exception as error:
-            llm_result = {
-                "name": case["name"],
-                "expected": case["expected"],
-                "actual": None,
-                "error": str(error),
-            }
+        else:
+            try:
+                llm_actual = flatten_facts_memory(
+                    llm_consolidate_facts_memory(
+                        DEFAULT_FACTS_MEMORY,
+                        case["transcript"],
+                        extractor_model=extractor_model,
+                        now="2026-04-10T12:00:00Z",
+                    )
+                )
+                llm_score = compare_flat_facts(case["expected"], llm_actual)
+                llm_result = {
+                    "name": case["name"],
+                    "expected": case["expected"],
+                    "actual": llm_actual,
+                    "score": llm_score,
+                }
+            except Exception as error:
+                llm_result = {
+                    "name": case["name"],
+                    "expected": case["expected"],
+                    "actual": None,
+                    "error": str(error),
+                }
         results["llm"].append(llm_result)
 
     summary = {
         "deterministic": summarize_scores(results["deterministic"]),
-        "llm": summarize_scores(results["llm"]),
+        "llm": (
+            {"status": "skipped", "reason": llm_skip_reason}
+            if llm_skip_reason
+            else summarize_scores(results["llm"])
+        ),
     }
 
     payload = {"summary": summary, "cases": results}
@@ -192,9 +211,10 @@ def run_benchmark(extractor_model: str, artifact_root: Path) -> dict[str, Any]:
 def summarize_scores(results: list[dict[str, Any]]) -> dict[str, Any]:
     scored = [entry["score"] for entry in results if "score" in entry]
     if not scored:
-        return {"cases": 0, "exact": 0, "precision": 0.0, "recall": 0.0, "f1": 0.0}
+        return {"status": "scored", "cases": 0, "exact": 0, "precision": 0.0, "recall": 0.0, "f1": 0.0}
 
     return {
+        "status": "scored",
         "cases": len(scored),
         "exact": sum(1 for entry in scored if entry["exact"]),
         "precision": round(sum(entry["precision"] for entry in scored) / len(scored), 4),
@@ -207,13 +227,18 @@ def format_results_markdown(payload: dict[str, Any]) -> str:
     lines = [
         "# Facts Extractor Benchmark",
         "",
-        "| Extractor | Cases | Exact | Precision | Recall | F1 |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Extractor | Status | Cases | Exact | Precision | Recall | F1 | Reason |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for name, summary in payload["summary"].items():
-        lines.append(
-            f"| {name} | {summary['cases']} | {summary['exact']} | {summary['precision']} | {summary['recall']} | {summary['f1']} |"
-        )
+        if summary["status"] == "skipped":
+            lines.append(
+                f"| {name} | skipped | - | - | - | - | - | {summary['reason']} |"
+            )
+        else:
+            lines.append(
+                f"| {name} | scored | {summary['cases']} | {summary['exact']} | {summary['precision']} | {summary['recall']} | {summary['f1']} | - |"
+            )
     lines.extend(["", "## Case Results", ""])
     for extractor_name, entries in payload["cases"].items():
         lines.append(f"### {extractor_name}")
@@ -222,10 +247,39 @@ def format_results_markdown(payload: dict[str, Any]) -> str:
                 lines.append(
                     f"- `{entry['name']}`: exact={entry['score']['exact']}, precision={entry['score']['precision']}, recall={entry['score']['recall']}, f1={entry['score']['f1']}"
                 )
+            elif entry.get("status") == "skipped":
+                lines.append(f"- `{entry['name']}`: skipped ({entry['reason']})")
             else:
                 lines.append(f"- `{entry['name']}`: error={entry['error']}")
         lines.append("")
     return "\n".join(lines)
+
+
+def _provider_env_var(extractor_model: str) -> str | None:
+    provider = extractor_model.split(":", 1)[0] if ":" in extractor_model else extractor_model
+    return {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "google_genai": "GOOGLE_API_KEY",
+    }.get(provider)
+
+
+def _llm_skip_reason(extractor_model: str) -> str | None:
+    env_var = _provider_env_var(extractor_model)
+    if env_var and not os.getenv(env_var):
+        return f"Skipping llm benchmark: extractor model {extractor_model} requires {env_var}."
+    return None
+
+
+def _reset_artifact_root(artifact_root: Path) -> None:
+    if not artifact_root.exists():
+        return
+
+    for child in artifact_root.iterdir():
+        if child.is_dir():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
 
 
 def _flatten_pairs(data: dict[str, Any]) -> set[tuple[str, str, str]]:
