@@ -273,6 +273,8 @@ def delete_memory_snapshot(
     if memory_type == "facts":
         delete_facts_events(memory_root, user_id)
     if memory_type == "summary":
+        # Summary mode owns private helper artifacts in addition to summary.json, so
+        # a clear has to remove both layers to avoid stale temporal recall.
         delete_summary_facts_memory(memory_root, user_id)
         delete_summary_facts_events(memory_root, user_id)
     return read_memory_snapshot(memory_type, memory_root, user_id)
@@ -485,6 +487,8 @@ def _persist_turn_memory(
         return updated
 
     current = current_memory or load_summary_memory(memory_root, user_id)
+    # Summary mode persists structured helper state privately, then rewrites the
+    # public summary from that state so overwrites stay coherent across restarts.
     current_summary_facts = load_summary_facts_memory(memory_root, user_id)
     updated_summary_facts = consolidate_facts_memory(current_summary_facts, turn_delta)
     save_summary_facts_memory(memory_root, user_id, updated_summary_facts)
@@ -530,6 +534,8 @@ def _render_temporal_memory_block(
     if memory_type == "facts":
         events = load_facts_events(memory_root, user_id)
     else:
+        # Summary mode uses its private helper event log only for explicit temporal
+        # questions; normal summary turns still inject summary.json alone.
         events = load_summary_facts_events(memory_root, user_id)
     return render_temporal_facts_memory_block(events, latest_user_message)
 

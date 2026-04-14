@@ -781,6 +781,8 @@ def _run_scenario_strategy(
         memory_root=memory_root,
         user_id=user_id,
     )
+    # A strategy only counts as healthy if both the user-visible answer and the
+    # persisted artifact state line up with the intended design.
     outcome = aggregate_outcomes(
         [check["outcome"] for check in check_outcomes] + [artifact_audit["outcome"]]
     )
@@ -821,6 +823,8 @@ def _write_memory_snapshot(
     elif strategy == "summary":
         snapshot = {
             "memory": _load_json_if_exists(summary_path(memory_root, user_id)),
+            # Expose summary mode's private temporal surface in harness artifacts so
+            # reviewer runs can verify explicit-history behavior without changing the UI.
             "temporal_events": _load_jsonl_if_exists(
                 summary_facts_events_path(memory_root, user_id)
             ),

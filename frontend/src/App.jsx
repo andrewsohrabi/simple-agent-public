@@ -549,6 +549,8 @@ export default function App() {
     }
 
     try {
+      // Facts sessions use an explicit finalize step so the web restart path matches
+      // the CLI path: persist any hybrid/LLM consolidation before clearing the chat.
       const response = await fetch(`${API_URL}/session/finalize`, {
         method: 'POST',
         headers: JSON_HEADERS,

@@ -46,10 +46,14 @@ def facts_events_path(memory_root: Path | str, user_id: str) -> Path:
 
 
 def summary_facts_path(memory_root: Path | str, user_id: str) -> Path:
+    # Summary mode keeps its structured helper state private so the compare UI can
+    # expose only summary.json while still resolving overwrites deterministically.
     return _summary_internal_root(memory_root, user_id) / "facts.json"
 
 
 def summary_facts_events_path(memory_root: Path | str, user_id: str) -> Path:
+    # Summary mode consults this auxiliary event log only for explicit temporal
+    # questions; it is not part of the default summary representation.
     return _summary_internal_root(memory_root, user_id) / "facts_events.jsonl"
 
 
@@ -307,6 +311,8 @@ def build_summary_memory_from_facts(
             "updated_at": prior_updated_at,
         }
 
+    # Rebuild summary prose from the latest structured state instead of appending
+    # phrases turn by turn, which keeps contradictions and overwrites coherent.
     summary = _bounded_summary(" ".join(fact_phrases), max_chars)
     if summary == prior_summary:
         return {
@@ -405,6 +411,8 @@ def _extractable_user_contents(transcript: list[Any]) -> list[str]:
 
 
 def _extractable_clauses(content: str) -> list[str]:
+    # Mixed turns often contain both durable facts and follow-up questions. Split
+    # them here so question-only clauses never mutate long-term memory.
     protected = content
     replacements: dict[str, str] = {}
     for index, abbreviation in enumerate(SENTENCE_ABBREVIATIONS):
@@ -867,6 +875,8 @@ def _select_temporal_events(
     relevant_keys = _temporal_query_keys(query)
     ordered_events = list(reversed(events))
     if relevant_keys:
+        # Keep the temporal prompt focused on the fields implied by the question
+        # instead of dumping unrelated history into the context window.
         ordered_events = [
             event for event in ordered_events if str(event.get("key") or "") in relevant_keys
         ]
