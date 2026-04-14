@@ -8,7 +8,7 @@ def make_agent(
     model_str: str = DEFAULT_MODEL_STR,
     system_prompt: str | None = None,
 ):
-    """Create a deep agent with the specified model provider.
+    """Create the Deep Agents runtime for the configured provider/model pair.
 
     Args:
         model_str: Provider and model in "provider:model" format.

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import signal
 import socket
 import subprocess
 import sys
@@ -190,6 +189,7 @@ def monitor_processes(processes: Iterable[tuple[str, subprocess.Popen[str]]]) ->
 
 
 def main() -> int:
+    """Start the backend and frontend review servers and keep them attached."""
     args = build_parser().parse_args()
 
     backend_url = backend_health_url(args.backend_host, args.backend_port)

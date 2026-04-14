@@ -216,6 +216,7 @@ DEMO_USERS: dict[str, dict[str, Any]] = {
 
 
 def compose_system_prompt(base_prompt: str | None, memory_block: str) -> str | None:
+    """Merge the caller's base prompt with any rendered long-term memory block."""
     memory_block = memory_block.strip()
     if memory_block:
         memory_block = (
@@ -239,6 +240,7 @@ def build_system_prompt_preview(
     user_id: str,
     base_system_prompt: str | None = None,
 ) -> str | None:
+    """Render the effective system prompt for the current saved-memory state."""
     current_memory, _ = read_memory_snapshot(memory_type, memory_root, user_id)
     memory_block = _render_memory_block(memory_type, current_memory)
     return compose_system_prompt(base_system_prompt, memory_block)
@@ -247,6 +249,7 @@ def build_system_prompt_preview(
 def read_memory_snapshot(
     memory_type: str, memory_root: Path | str, user_id: str
 ) -> tuple[dict[str, Any] | None, Path | None]:
+    """Load the current public memory artifact for the requested strategy."""
     root = Path(memory_root)
     if memory_type == "facts":
         return load_facts_memory(root, user_id), facts_path(root, user_id)
@@ -258,6 +261,7 @@ def read_memory_snapshot(
 def read_facts_events_snapshot(
     memory_type: str, memory_root: Path | str, user_id: str
 ) -> tuple[list[dict[str, Any]] | None, Path | None]:
+    """Load the reviewer-facing fact event log for facts mode when available."""
     root = Path(memory_root)
     if memory_type == "facts":
         return load_facts_events(root, user_id), facts_events_path(root, user_id)
@@ -267,6 +271,7 @@ def read_facts_events_snapshot(
 def delete_memory_snapshot(
     memory_type: str, memory_root: Path | str, user_id: str
 ) -> tuple[dict[str, Any] | None, Path | None]:
+    """Clear persisted memory for one strategy and return the post-delete snapshot."""
     memory, path = read_memory_snapshot(memory_type, memory_root, user_id)
     if path and path.exists():
         path.unlink()
@@ -281,6 +286,7 @@ def delete_memory_snapshot(
 
 
 def get_backend_health(memory_root: Path | str) -> dict[str, Any]:
+    """Report backend reachability, writable storage, and provider-env readiness."""
     root = Path(memory_root)
     root.mkdir(parents=True, exist_ok=True)
 
@@ -319,6 +325,7 @@ def get_backend_health(memory_root: Path | str) -> dict[str, Any]:
 
 
 def list_demo_users() -> list[dict[str, str]]:
+    """Return the seeded demo-user catalog exposed to the frontend."""
     return [
         {
             "key": demo["key"],
@@ -332,6 +339,7 @@ def list_demo_users() -> list[dict[str, str]]:
 
 
 def load_demo_user(memory_root: Path | str, demo_user_key: str) -> dict[str, Any]:
+    """Seed one demo user path and return refreshed memory and prompt previews."""
     if demo_user_key not in DEMO_USERS:
         raise KeyError(f"Unknown demo user: {demo_user_key}")
 
@@ -389,6 +397,9 @@ def run_chat_turn(
     extractor_model: str = DEFAULT_EXTRACTOR_MODEL,
     agent_factory: AgentFactory = make_agent,
 ) -> dict[str, Any]:
+    """Run one turn, rebuild prompt context from disk, and persist durable updates."""
+    # Re-read persisted memory on every turn so live chats and restarted sessions
+    # share the same prompt-construction path.
     current_memory, memory_path = read_memory_snapshot(memory_type, memory_root, user_id)
     memory_block = _render_memory_block(memory_type, current_memory)
     temporal_block = _render_temporal_memory_block(
@@ -405,6 +416,8 @@ def run_chat_turn(
     assistant_message = updated_messages[-1]
     reply = getattr(assistant_message, "content", "")
 
+    # Incremental persistence only inspects the latest exchange so deterministic
+    # extractors do not repeatedly reprocess older turns.
     turn_delta = _latest_exchange(updated_messages)
     updated_memory = _persist_turn_memory(
         memory_type=memory_type,
@@ -436,6 +449,7 @@ def finalize_chat_session(
     facts_extractor: str = DEFAULT_FACTS_EXTRACTOR,
     extractor_model: str = DEFAULT_EXTRACTOR_MODEL,
 ) -> dict[str, Any] | None:
+    """Apply end-of-session facts refinement so explicit restarts match CLI exit."""
     if memory_type != "facts" or facts_extractor not in {"hybrid", "llm"} or not messages:
         memory, _ = read_memory_snapshot(memory_type, memory_root, user_id)
         return memory
@@ -469,6 +483,8 @@ def _persist_turn_memory(
     if memory_type == "none":
         return None
 
+    # Facts mode stores canonical structured state directly. Summary mode keeps
+    # structured helper facts private and rewrites summary.json from that state.
     if memory_type == "facts":
         current = current_memory or load_facts_memory(memory_root, user_id)
         if facts_extractor in {"deterministic", "hybrid"}:
@@ -527,6 +543,8 @@ def _render_temporal_memory_block(
     if memory_type not in {"facts", "summary"}:
         return ""
 
+    # Temporal history stays out of the default prompt; only explicit prior-state
+    # questions get the extra event context.
     latest_user_message = _latest_user_message_content(messages)
     if not latest_user_message or not _is_temporal_query(latest_user_message):
         return ""
@@ -574,6 +592,10 @@ def _latest_user_message_content(messages: list[Any]) -> str:
 
 
 def _is_temporal_query(message: str) -> bool:
+    """Use a narrow heuristic so ordinary recall does not pull full change history."""
+    # This stays intentionally conservative: if the user is not clearly asking
+    # about a prior state or change over time, keep the prompt focused on the
+    # latest persisted state and leave the event log out of context.
     lowered = message.lower()
     return any(
         token in lowered
