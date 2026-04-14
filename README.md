@@ -525,6 +525,12 @@ Current checked-in sample:
 | deterministic | scored | 9 | 9 | 1.0 | 1.0 | 1.0 | - |
 | llm | scored | 9 | 4 | 0.7593 | 0.7778 | 0.6926 | - |
 
+In simple terms, these sample results mean:
+- the deterministic extractor got all 9 benchmark cases exactly right
+- the LLM extractor ran successfully on all 9 cases, but only matched all expected facts exactly on 4 of them
+- the LLM extractor still found many of the right facts overall, but it missed or mismatched some expected fields in several cases
+- this table is about structured fact extraction accuracy only; it does not mean the full chat agent is “good” or “bad”
+
 If provider auth is missing in your local environment, the `llm` row will be rendered as `skipped` with a reason instead of as zero-quality output. The checked-in sample above is one successful run, not a claim that deterministic extraction is universally better.
 
 ## Reset memory
