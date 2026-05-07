@@ -67,9 +67,10 @@ uv run chat --qms-search --mode hybrid --limit 8 --trace --full-citations
 ```
 
 Formatted QMS output includes an answer panel, run summary, warnings, source
-cards, and grouped operational trace sections. Citation cards include document
-ID, revision, title, section, filename, chunk ID, score when present, and full
-paths when `--full-citations` is set.
+cards, grouped operational trace sections, and a repeated answer panel at the
+bottom so long trace/citation runs do not require scrolling back to the top.
+Citation cards include document ID, revision, title, section, filename, chunk
+ID, score when present, and full paths when `--full-citations` is set.
 
 Trace output is part of the query-path contract. It must preserve evidence
 provenance and show raw/normalized input, planned intent, query-expansion

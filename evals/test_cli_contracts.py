@@ -136,6 +136,10 @@ def test_chat_cli_qms_search_mode_prints_citations(monkeypatch, capsys):
 
     output = capsys.readouterr().out
     assert "Assistant: search reply for Find BOM-055" in output
+    assert "Assistant (repeated): search reply for Find BOM-055" in output
+    assert output.index("Assistant: search reply for Find BOM-055") < output.rindex(
+        "Assistant (repeated): search reply for Find BOM-055"
+    )
     assert "Citations:" in output
     assert "BOM-055 Rev G" in output
     assert prompts == ["QMS> ", "QMS> "]
@@ -487,6 +491,9 @@ def test_pretty_renderer_formats_citations_and_trace():
 
     output = stream.getvalue()
     assert "Assistant" in output
+    assert "Assistant (Repeated)" in output
+    assert output.count("search reply for Find BOM-055") == 2
+    assert output.rindex("Assistant (Repeated)") > output.rindex("Operational Trace")
     assert "Mode" in output
     assert "Retrieval backend" in output
     assert "local_hybrid" in output

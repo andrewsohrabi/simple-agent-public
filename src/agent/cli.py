@@ -86,6 +86,17 @@ class CliRenderer:
                 self.console.print()
             else:
                 self._render_trace(result.get("debug_trace", {}))
+        self._render_repeated_answer(result)
+
+    def _render_repeated_answer(self, result: dict[str, object]) -> None:
+        self.console.print(
+            Panel(
+                str(result.get("answer", "")),
+                title="Assistant (Repeated)",
+                box=box.ASCII,
+            )
+        )
+        self.console.print()
 
     def _render_summary(self, result: dict[str, object]) -> None:
         table = Table(title="Run Summary", box=box.SIMPLE, show_header=True)
@@ -210,6 +221,7 @@ def _print_search_result(
         print("Trace:")
         print(json.dumps(result.get("debug_trace", {}), indent=2))
         print()
+    print(f"Assistant (repeated): {result.get('answer', '')}\n")
 
 
 def _summary_subtitle(result: dict[str, object]) -> str:
