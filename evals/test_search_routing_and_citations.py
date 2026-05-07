@@ -174,13 +174,24 @@ def _service(tmp_path) -> QmsSearchService:
 def test_service_routes_counts_lists_and_revision_chains_to_sql(tmp_path):
     service = _service(tmp_path)
 
+    class HostedExplodes:
+        def is_available(self):
+            return True
+
+        def search(self, query, store, *, limit):
+            raise AssertionError("SQL-backed plans must not call hosted search")
+
+    service.hosted_search = HostedExplodes()
+
     count = service.search("How many BOM revisions are present for BOM-055?", mode="local")
     assert count["query_plan"]["strategy"] == "sql_count"
+    assert count["retrieval_backend"] == "sql_inventory"
     assert "Count: 2 BOM-055 document revisions" in count["answer"]
     assert {doc["revision"] for doc in count["retrieved_documents"]} == {"F", "G"}
 
     listing = service.search("What verification test protocols do we have for the MX1?", mode="local")
     assert listing["query_plan"]["strategy"] == "sql_list"
+    assert listing["retrieval_backend"] == "sql_inventory"
     assert listing["retrieved_documents"][0]["doc_id"] == "VVPR-P01-179"
 
     chain = service.search(
@@ -188,6 +199,7 @@ def test_service_routes_counts_lists_and_revision_chains_to_sql(tmp_path):
         mode="local",
     )
     assert chain["query_plan"]["strategy"] == "revision_chain"
+    assert chain["retrieval_backend"] == "revision_chain"
     assert "Rev G latest" in chain["answer"]
     assert "Rev F obsolete" in chain["answer"]
 
@@ -208,7 +220,12 @@ def test_service_uses_hosted_search_then_falls_back_to_local(tmp_path):
     service.hosted_search = HostedHit()
     hosted = service.search("approved transition change request", mode="auto")
     assert hosted["retrieved_documents"][0]["doc_id"] == "ECR-593"
+    assert hosted["retrieval_backend"] == "hosted_file_search"
     assert "hosted_file_search_used" in hosted["warnings"]
+
+    hosted_strict = service.search("approved transition change request", mode="hosted")
+    assert hosted_strict["retrieved_documents"][0]["doc_id"] == "ECR-593"
+    assert hosted_strict["retrieval_backend"] == "hosted_file_search"
 
     class HostedMiss:
         def is_available(self):
@@ -220,7 +237,33 @@ def test_service_uses_hosted_search_then_falls_back_to_local(tmp_path):
     service.hosted_search = HostedMiss()
     fallback = service.search("Radiographic verification protocol", mode="auto")
     assert fallback["retrieved_documents"][0]["doc_id"] == "VVPR-P01-179"
+    assert fallback["retrieval_backend"] in {"local_hybrid", "local_fts"}
     assert "hosted_file_search_no_hits" in fallback["warnings"]
+
+    hosted_fallback = service.search("Radiographic verification protocol", mode="hosted")
+    assert hosted_fallback["retrieved_documents"][0]["doc_id"] == "VVPR-P01-179"
+    assert hosted_fallback["retrieval_backend"] in {"local_hybrid", "local_fts"}
+    assert "hosted_file_search_no_hits" in hosted_fallback["warnings"]
+
+
+@pytest.mark.parametrize("mode", ["local", "hybrid"])
+def test_local_and_hybrid_modes_never_call_hosted_search(tmp_path, mode):
+    service = _service(tmp_path)
+
+    class HostedExplodes:
+        def is_available(self):
+            return True
+
+        def search(self, query, store, *, limit):
+            raise AssertionError(f"{mode} mode must not call hosted search")
+
+    service.hosted_search = HostedExplodes()
+
+    result = service.search("older bill of materials evidence", mode=mode)
+
+    assert result["retrieval_backend"] in {"local_hybrid", "local_fts"}
+    assert result["retrieved_documents"][0]["doc_id"] == "BOM-055"
+    assert "hosted_file_search_used" not in result["warnings"]
 
 
 @pytest.mark.parametrize("mode", ["local", "hybrid"])

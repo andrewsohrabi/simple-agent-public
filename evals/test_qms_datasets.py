@@ -54,6 +54,28 @@ def test_validate_record_rejects_malformed_expected_schema():
         validate_dataset([record])
 
 
+def test_optional_expected_contract_fields_round_trip_to_typed_cases():
+    core_records = {record["id"]: record for record in load_jsonl(CORE_DATASET)}
+    smoke_records = {record["id"]: record for record in load_jsonl(SMOKE_DATASET)}
+
+    required_docs_case = QmsEvalCase.from_record(
+        core_records["qms_known_item_retrieval_002"]
+    )
+    backend_case = QmsEvalCase.from_record(smoke_records["qms_exploratory_search_001"])
+    table_case = QmsEvalCase.from_record(
+        smoke_records["qms_content_extraction_synthesis_001"]
+    )
+
+    assert required_docs_case.expected.required_doc_ids == (
+        "MEMO-P01-859",
+        "DHF-008",
+    )
+    assert backend_case.expected.required_backend == "sql_inventory"
+    assert table_case.expected.required_table_evidence == (
+        "MEMO-P01-685 Table 2 row 2",
+    )
+
+
 def test_scoring_is_deterministic_for_terms_and_sources():
     record = load_jsonl(SMOKE_DATASET)[0]
     assert validate_record(record) == []

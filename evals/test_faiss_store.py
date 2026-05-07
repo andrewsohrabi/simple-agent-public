@@ -6,6 +6,11 @@ import numpy as np
 from agent.config import SearchConfig
 from agent.search.embeddings import HashEmbeddingProvider
 from agent.search.faiss_store import LocalVectorIndex
+from agent.search.index_contracts import (
+    ARTIFACT_CONTRACT_VERSION,
+    VECTOR_MANIFEST_ARTIFACT_TYPE,
+    VECTOR_MANIFEST_SCHEMA_VERSION,
+)
 from agent.search.schema import Chunk
 
 
@@ -100,6 +105,9 @@ def test_local_vector_index_manifest_records_model_and_dimensions(tmp_path, monk
         ),
     )
     assert manifest["embedding_provider"] == "hash"
+    assert manifest["artifact_type"] == VECTOR_MANIFEST_ARTIFACT_TYPE
+    assert manifest["artifact_contract_version"] == ARTIFACT_CONTRACT_VERSION
+    assert manifest["schema_version"] == VECTOR_MANIFEST_SCHEMA_VERSION
     assert manifest["embedding_model"] == "text-embedding-3-large"
     assert manifest["embedding_dimensions"] == 3072
     assert manifest["actual_embedding_dimensions"] == 3072
@@ -146,6 +154,9 @@ def test_local_vector_index_uses_faiss_backend_when_importable(tmp_path, monkeyp
     assert [hit.doc_id for hit in hits] == ["DOC-A", "DOC-B"]
     assert fake_faiss.instances[-1].search_calls
     assert stats["vector_backend"] == "faiss"
+    assert stats["validation"]["artifacts"]["vector_manifest"].endswith(
+        "manifest.json"
+    )
 
 
 def test_local_vector_index_uses_numpy_fallback_when_faiss_missing(tmp_path, monkeypatch):

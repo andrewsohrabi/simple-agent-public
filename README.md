@@ -115,17 +115,83 @@ flowchart LR
     Answer --> UI["Desktop-first React search workbench"]
 ```
 
-Important commands:
+Important build/status commands:
 
 ```bash
 uv run ingest-qms
 uv run build-qms-index
 uv run build-qms-index --hash-embeddings   # deterministic local smoke index
 uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
-uv run search-evals --dataset evals/datasets/qms_core.jsonl --report docs/eval-runs --hash-embeddings --mode local
 uv run serve
 cd frontend && npm run dev
 ```
+
+Retrieval mode semantics are explicit:
+
+| Mode | Semantics |
+| --- | --- |
+| `auto` | Hosted OpenAI File Search first when synced and healthy; falls back to local retrieval if hosted state is missing, empty, stale, or errors. |
+| `hosted` | Hosted-preferred validation mode; tries hosted retrieval first and falls back to local retrieval with warnings instead of hard-failing the turn. |
+| `hybrid` | Strict local SQLite FTS + FAISS-compatible dense retrieval + reranker path; never calls hosted search. This is the primary local quality/eval mode. |
+| `local` | Local-only fallback/debug path; never calls hosted search. Use it to isolate SQLite/vector fallback behavior without hosted routing. |
+
+Copy-paste CLI commands:
+
+```bash
+# Status
+uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
+
+# Single-turn strict local hybrid search
+uv run search-qms "Find BOM-055 Rev G" --mode hybrid --limit 8
+
+# Interactive multi-turn QMS chat on strict local hybrid retrieval
+uv run chat --qms-search --mode hybrid --limit 8
+
+# Interactive auto mode: hosted first, local fallback
+uv run chat --qms-search --mode auto --limit 8
+
+# Human CLI defaults: QMS> prompt, pretty output, and dynamic progress on TTYs
+uv run chat --qms-search --mode hybrid --limit 8
+
+# Disable the dynamic spinner while keeping pretty output on an interactive terminal
+uv run chat --qms-search --mode hybrid --limit 8 --no-progress
+
+# Stable plain text for logs and copy/paste
+uv run chat --qms-search --mode hybrid --limit 8 --plain
+
+# One-turn trace output for routing/debug inspection
+printf 'Find BOM-055 Rev G\nquit\n' | uv run chat --qms-search --mode hybrid --limit 8 --trace
+
+# Raw JSON trace instead of formatted trace panels
+printf 'Find BOM-055 Rev G\nquit\n' | uv run chat --qms-search --mode hybrid --limit 8 --trace --raw-trace
+
+# One-turn full citation paths
+printf 'Find BOM-055 Rev G\nquit\n' | uv run chat --qms-search --mode hybrid --limit 8 --full-citations
+
+# Automation-friendly JSON output; suppresses prompt, progress, and Rich formatting
+printf 'Find BOM-055 Rev G\nquit\n' | uv run chat --qms-search --mode hybrid --json
+
+# Deterministic hash-embedding smoke path
+uv run search-qms "Find BOM-055 Rev G" --mode hybrid --limit 8 --hash-embeddings
+
+# Scripted multi-turn smoke with trace and full citations
+printf 'Find the Bill of Materials for the MX1 system\nWhat revision is that?\nShow me the full pathname citation.\nquit\n' | uv run chat --qms-search --mode hybrid --limit 8 --trace --full-citations
+
+# Scripted auto fallback smoke by pointing hosted state at a missing local file
+printf 'Find BOM-055 Rev G\nquit\n' | OPENAI_VECTOR_STORE_STATE=/private/tmp/missing-openai-vector-store-state.json uv run chat --qms-search --mode auto --limit 8 --trace
+
+# Strict local hybrid eval
+uv run search-evals --dataset evals/datasets/qms_core.jsonl --report docs/eval-runs --mode hybrid --fail-under 0
+
+# Hosted-first auto eval with local fallback
+uv run search-evals --dataset evals/datasets/qms_core.jsonl --report docs/eval-runs --mode auto --fail-under 0
+```
+
+Interactive QMS chat uses a `QMS> ` prompt. If a pasted transcript line starts
+with `You:`, `User:`, `Q:`, or `Query:`, the prefix is stripped before routing
+and preserved in the trace. Human terminal sessions get Rich panels, citation
+cards, grouped traces, and a progress spinner; piped/scripted runs stay stable.
+Use `--json` for machine-readable output or `--plain` for deterministic text.
 
 The current implementation includes deterministic ingestion, revision parsing,
 SQLite inventory/counts plus revision/reference tables, FTS5 lookup, a

@@ -27,6 +27,31 @@ When a bug is resolved and likely to recur, move or summarize the final lesson i
 
 No active implementation bugs are currently unresolved.
 
+## 2026-05-07 - QMS CLI Prompt-Prefixed Input Echo
+
+- Status: resolved
+- Owner: Codex
+- Priority: medium
+- Command: `uv run chat --qms-search --mode hybrid --limit 8 --trace --full-citations`
+- Failure signature: interactive transcript could display `You: You: ...` when the pasted/typed user text already included a leading `You:` label; that prompt label also reached the search query and caused follow-up routing to lose the prior document context.
+- Context: multi-turn CLI users may paste copied transcript lines such as `You: what changed...`; the CLI previously used `input("You: ")` for QMS mode and passed the raw line to follow-up resolution/search.
+- Attempts: added TDD coverage for transcript-prefix normalization, QMS prompt labeling, prompt-prefixed latest-version follow-up anchoring, and full-path citation answer overrides.
+- Confirmed fix: QMS mode now prompts with `QMS> `, strips leading `You:`, `User:`, `Q:`, and `Query:` prefixes before routing, records raw/normalized input in trace, treats latest/previous version wording as follow-up context, and uses a deterministic answer for full-path citation requests.
+- Verification: `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest evals/test_cli_contracts.py evals/test_answer_synthesis.py -q`; scripted smoke with `You: what changed in the latest version from previous versions?` anchored to `BOM-055 Rev G` and compared `Rev G vs Rev F`.
+
+## 2026-05-07 - CLI QMS Command Contract Source Sync
+
+- Status: resolved
+- Owner: CLI/backend worker
+- Priority: medium
+- Command: source inspection for `uv run search-qms "Find BOM-055 Rev G" --mode hybrid --limit 8` and `uv run chat --qms-search --mode hybrid --limit 8 --trace --full-citations`
+- Failure signature: an earlier source snapshot showed `pyproject.toml` without a `search-qms` console script and `src/agent/cli.py` without `--trace`, `--full-citations`, or `--json`, while the CLI contract tests and docs expected those commands.
+- Context: docs were updated to the requested explicit retrieval-mode and copy-paste CLI command contract while companion CLI/backend work was landing.
+- Attempts: no backend fix attempted because this docs pass is scoped to `README.md`, `DESIGN.md`, `docs/walkthrough.md`, `docs/evals.md`, and `docs/bugs/bugs.md`.
+- Confirmed fix: companion changes now register `search-qms = "agent.search.cli:query_main"` in `pyproject.toml`, expose `chat --trace`, `chat --full-citations`, and `chat --json`, and keep `search-qms --mode local|hybrid|hosted|auto`.
+- Verification: source readback only in this docs pass; command execution should be covered by CLI contract tests and smoke commands in the implementation pass.
+- Links: `README.md`, `evals/test_cli_contracts.py`
+
 ## 2026-05-07 - Mobile Search Workbench Horizontal Overflow
 
 - Status: resolved

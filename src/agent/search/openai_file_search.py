@@ -109,6 +109,14 @@ class OpenAIFileSearch:
                     "hosted_state_path": str(self.state_path),
                     **hosted_by_doc.get((hit.doc_id, hit.revision), {}),
                 },
+                evidence_type=hit.evidence_type,
+                support_level=hit.support_level,
+                table_index=hit.table_index,
+                row_start=hit.row_start,
+                row_end=hit.row_end,
+                heading_path=hit.heading_path,
+                columns=hit.columns,
+                row_cells=hit.row_cells,
             )
             for hit in hits
         ]

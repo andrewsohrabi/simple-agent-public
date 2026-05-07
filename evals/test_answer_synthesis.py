@@ -89,6 +89,20 @@ def _hit() -> SearchHit:
     )
 
 
+def _revision_hit(revision: str) -> SearchHit:
+    return SearchHit(
+        chunk_id=f"BOM-055:{revision}:metadata:0",
+        doc_id="BOM-055",
+        revision=revision,
+        title="MX1 Bill of Materials",
+        section="Document Metadata",
+        text=f"BOM-055 Rev {revision} bill of materials evidence.",
+        score=1.0,
+        source="metadata",
+        metadata={"is_obsolete": False},
+    )
+
+
 def _plan(**overrides) -> QueryPlan:
     values = {
         "category": "known_item",
@@ -130,17 +144,19 @@ def test_synthesized_answer_uses_config_chat_model_and_keeps_local_citations(tmp
     result = answerer.answer("Summarize BOM-055", _plan(), [_hit()])
 
     assert result["answer"] == "BOM-055 Rev G is the active bill of materials for MX1. [S1]"
-    assert result["citations"] == [
-        {
-            "doc_id": "BOM-055",
-            "revision": "G",
-            "title": "MX1 Bill of Materials",
-            "section": "Document Metadata",
-            "filename": "BOM-055_rev-G.docx",
-            "markdown_path": "markdown/BOM-055_rev-G.md",
-            "chunk_id": "BOM-055:G:metadata:0",
-        }
-    ]
+    citation = result["citations"][0]
+    expected_citation_fields = {
+        "doc_id": "BOM-055",
+        "revision": "G",
+        "title": "MX1 Bill of Materials",
+        "section": "Document Metadata",
+        "filename": "BOM-055_rev-G.docx",
+        "markdown_path": "markdown/BOM-055_rev-G.md",
+        "chunk_id": "BOM-055:G:metadata:0",
+    }
+    assert expected_citation_fields.items() <= citation.items()
+    assert citation["markdown_path_abs"].endswith("markdown/BOM-055_rev-G.md")
+    assert citation["source_path_abs"].endswith("BOM-055_rev-G.docx")
     assert result["warnings"] == []
     assert synthesizer.calls[0]["model"] == "gpt-5.5"
     assert synthesizer.calls[0]["max_input_chars"] == 12000
@@ -157,6 +173,24 @@ def test_synthesis_failure_falls_back_to_deterministic_answer_with_warning(tmp_p
     assert "BOM-055 Rev G, Document Metadata" in result["answer"]
     assert "answer_synthesis_fallback:RuntimeError" in result["warnings"]
     assert result["citations"][0]["doc_id"] == "BOM-055"
+
+
+def test_revision_diff_without_explicit_pair_uses_latest_first_hit_order(tmp_path):
+    store = _store(tmp_path)
+    answerer = SearchAnswerer(
+        store,
+        config=SearchConfig(answer_synthesis_enabled=False),
+    )
+
+    result = answerer.answer(
+        "what changed in the latest version from previous versions?",
+        _plan(strategy="revision_diff", requires_diff=True),
+        [_revision_hit("G"), _revision_hit("F"), _revision_hit("E")],
+    )
+
+    assert "Requested comparison: G vs F." in result["answer"]
+    assert "- Rev G:" in result["answer"]
+    assert "- Rev F:" in result["answer"]
 
 
 def test_count_answer_path_avoids_answer_synthesis(tmp_path):

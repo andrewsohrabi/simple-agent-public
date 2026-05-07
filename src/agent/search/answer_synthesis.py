@@ -65,8 +65,13 @@ def build_synthesis_prompt(
         evidence_blocks.append(
             "\n".join(
                 [
-                    f"[{label}] {hit.doc_id} Rev {hit.revision} - {hit.title}",
+                    (
+                        f"[{label}] type={hit.evidence_type}, support={hit.support_level}, "
+                        f"doc={hit.doc_id} Rev {hit.revision} - {hit.title}"
+                    ),
                     f"Section: {hit.section}",
+                    f"Heading path: {' > '.join(hit.heading_path) if hit.heading_path else hit.section}",
+                    _table_context(hit),
                     f"Chunk ID: {hit.chunk_id}",
                     f"Evidence: {excerpt}",
                 ]
@@ -80,14 +85,40 @@ def build_synthesis_prompt(
 
     return (
         "You are answering questions about the MedAI QMS internal document corpus.\n"
+        "Domain map: BOM means bill of materials; DHF means design history file; "
+        "ECR/DCO are change-control records; RSK/RMF/PFMEA/DFMEA are risk evidence; "
+        "VVAM is the verification/validation trace matrix; VVPR records are verification "
+        "protocol/report evidence; 3P records are third-party reports; MEMO records often "
+        "summarize reviews, clearances, and V&V status. Prefer latest active records unless "
+        "the question asks for obsolete/history. For traceability, reason in the order "
+        "risk/RMF source -> VVAM bridge -> summary/result -> verification target.\n"
         "Use only the evidence below. Every factual claim must cite one or more "
         "provided source labels such as [S1]. Do not invent source labels, document "
         "IDs, revisions, sections, counts, or requirements. If the evidence is "
-        "insufficient, say what is missing.\n\n"
+        "insufficient, say what is missing. Treat metadata evidence as document-discovery "
+        "support only; table row facts require table_row or table_full evidence with the "
+        "right row/columns.\n\n"
         f"Question:\n{query}\n\n"
         f"Evidence:\n{evidence}\n\n"
         "Answer with concise, source-grounded prose."
     )
+
+
+def _table_context(hit: SearchHit) -> str:
+    parts: list[str] = []
+    if hit.table_index is not None:
+        parts.append(f"table={hit.table_index}")
+    if hit.row_start is not None:
+        row = f"row={hit.row_start}"
+        if hit.row_end is not None and hit.row_end != hit.row_start:
+            row += f"-{hit.row_end}"
+        parts.append(row)
+    if hit.columns:
+        parts.append("columns=[" + ", ".join(hit.columns) + "]")
+    if hit.row_cells:
+        cells = " | ".join(f"{key}={value}" for key, value in hit.row_cells.items())
+        parts.append(f"row_cells={cells}")
+    return "Table context: " + "; ".join(parts) if parts else "Table context: none"
 
 
 def uses_only_known_source_labels(

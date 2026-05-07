@@ -36,7 +36,10 @@ if [ ! -f .env ] || ! grep -q '^OPENAI_API_KEY=.\+' .env; then
   warn "OPENAI_API_KEY is not set in .env; OpenAI-backed paths may be unavailable"
 fi
 
-info "running Python tests"
+info "running QMS source-truth query-path gate"
+uv run pytest evals/test_qms_source_truth_contracts.py -q
+
+info "running full Python tests"
 uv run pytest -q
 
 info "collecting status snapshot"

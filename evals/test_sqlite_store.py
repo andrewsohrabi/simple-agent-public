@@ -68,6 +68,31 @@ def test_sqlite_store_populates_index_tables_from_manifest(tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM ingest_runs").fetchone()[0] == 1
 
 
+def test_sqlite_store_extracts_compact_3p_references(tmp_path):
+    manifest = _manifest(tmp_path)
+    markdown_path = tmp_path / "MEMO-P01-685.md"
+    markdown_path.write_text(
+        "# Summary\n\nElectrical Safety Testing references 3P-P01-33 and EMC references 3P-P01-32.",
+        encoding="utf-8",
+    )
+    manifest["documents"] = [
+        {
+            **manifest["documents"][0],
+            "doc_id": "MEMO-P01-685",
+            "prefix": "MEMO",
+            "title": "MX1 Design Verification and Validation Summary",
+            "filename": "MEMO-P01-685.docx",
+            "source_path": "qms/MEMO-P01-685.docx",
+            "markdown_path": str(markdown_path),
+        }
+    ]
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.load_manifest(manifest)
+
+    references = {row["target_doc_id"] for row in store.references_from("MEMO-P01-685", "G")}
+    assert {"3P-P01-33", "3P-P01-32"} <= references
+
+
 def test_sqlite_schema_current_requires_fts_table(tmp_path):
     store = SearchStore(tmp_path / "qms.sqlite")
     store.initialize()

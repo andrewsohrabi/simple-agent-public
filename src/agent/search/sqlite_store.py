@@ -364,6 +364,127 @@ class SearchStore:
         docs = [dict(row) for row in rows]
         return {"prefix": prefix.upper(), "count": len(docs), "documents": docs}
 
+    def documents_by_ids(
+        self,
+        doc_ids: list[str],
+        *,
+        latest_only: bool = True,
+        include_obsolete: bool = False,
+        limit_per_id: int = 10,
+    ) -> list[dict[str, object]]:
+        documents: list[dict[str, object]] = []
+        seen: set[tuple[str, str]] = set()
+        for doc_id in doc_ids:
+            for doc in self.find_documents(
+                doc_id=doc_id,
+                latest_only=latest_only,
+                include_obsolete=include_obsolete,
+                limit=limit_per_id,
+            ):
+                key = (str(doc["doc_id"]), str(doc["revision"]))
+                if key in seen:
+                    continue
+                documents.append(doc)
+                seen.add(key)
+        return documents
+
+    def keyword_chunks(
+        self,
+        *,
+        doc_id: str | None = None,
+        prefix: str | None = None,
+        all_terms: list[str] | None = None,
+        any_terms: list[str] | None = None,
+        latest_only: bool | None = None,
+        include_obsolete: bool = False,
+        limit: int = 20,
+        prefer_table: bool = False,
+    ) -> list[SearchHit]:
+        clauses: list[str] = []
+        values: list[object] = []
+        if doc_id:
+            clauses.append("c.doc_id LIKE ?")
+            values.append(f"%{doc_id.upper()}%")
+        if prefix:
+            clauses.append("d.prefix = ?")
+            values.append(prefix.upper())
+        if latest_only is not None:
+            clauses.append("d.is_latest = ?")
+            values.append(int(latest_only))
+        if not include_obsolete:
+            clauses.append("d.is_obsolete = 0")
+        for term in all_terms or []:
+            clauses.append("lower(c.search_text) LIKE ?")
+            values.append(f"%{term.lower()}%")
+        if any_terms:
+            any_clauses = []
+            for term in any_terms:
+                any_clauses.append("lower(c.search_text) LIKE ?")
+                values.append(f"%{term.lower()}%")
+            clauses.append("(" + " OR ".join(any_clauses) + ")")
+        where = " AND ".join(clauses) if clauses else "1 = 1"
+        table_order = "CASE c.kind WHEN 'table' THEN 0 ELSE 1 END," if prefer_table else ""
+        values.append(limit)
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT c.*
+                FROM chunks c
+                JOIN documents d ON d.doc_id = c.doc_id AND d.revision = c.revision
+                WHERE {where}
+                ORDER BY {table_order} d.doc_id, d.revision_rank DESC, c.ordinal
+                LIMIT ?
+                """,
+                values,
+            ).fetchall()
+        return [_hit_from_chunk_row(row, index, source="keyword") for index, row in enumerate(rows)]
+
+    def risk_related_documents(
+        self,
+        *,
+        latest_only: bool = True,
+        include_obsolete: bool = False,
+        limit: int = 500,
+    ) -> list[dict[str, object]]:
+        clauses = [
+            """(
+                d.prefix = 'RSK'
+                OR lower(d.title) LIKE '%risk%'
+                OR lower(d.title) LIKE '%pfmea%'
+                OR EXISTS (
+                    SELECT 1
+                    FROM chunks c
+                    WHERE c.doc_id = d.doc_id
+                      AND c.revision = d.revision
+                      AND (
+                        lower(c.search_text) LIKE '%risk management%'
+                        OR lower(c.search_text) LIKE '%risk assessment%'
+                        OR lower(c.search_text) LIKE '%risk analysis%'
+                        OR lower(c.search_text) LIKE '%rmf%'
+                        OR lower(c.search_text) LIKE '%pfmea%'
+                      )
+                )
+            )"""
+        ]
+        values: list[object] = []
+        if latest_only:
+            clauses.append("d.is_latest = 1")
+        if not include_obsolete:
+            clauses.append("d.is_obsolete = 0")
+        values.append(limit)
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT d.*
+                FROM documents d
+                WHERE {' AND '.join(clauses)}
+                ORDER BY d.prefix, d.doc_id, d.revision_rank DESC
+                LIMIT ?
+                """,
+                values,
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def revision_chain(
         self,
         *,
@@ -423,19 +544,7 @@ class SearchStore:
                     (doc["doc_id"], doc["revision"], limit_per_doc),
                 ).fetchall()
                 for row in rows:
-                    hits.append(
-                        SearchHit(
-                            chunk_id=row["chunk_id"],
-                            doc_id=row["doc_id"],
-                            revision=row["revision"],
-                            title=row["title"],
-                            section=row["section"],
-                            text=row["text"],
-                            score=1.0 / (doc_index + 1),
-                            source="metadata",
-                            metadata=json.loads(row["metadata_json"]),
-                        )
-                    )
+                    hits.append(_hit_from_chunk_row(row, doc_index, source="metadata"))
         return hits
 
     def fts_search(self, query: str, *, limit: int = 20) -> list[SearchHit]:
@@ -473,20 +582,7 @@ class SearchStore:
                 ).fetchall()
         hits: list[SearchHit] = []
         for index, row in enumerate(rows):
-            metadata = json.loads(row["metadata_json"])
-            hits.append(
-                SearchHit(
-                    chunk_id=row["chunk_id"],
-                    doc_id=row["doc_id"],
-                    revision=row["revision"],
-                    title=row["title"],
-                    section=row["section"],
-                    text=row["text"],
-                    score=1.0 / (index + 1),
-                    source="fts",
-                    metadata=metadata,
-                )
-            )
+            hits.append(_hit_from_chunk_row(row, index, source="fts"))
         return hits
 
     def expand_neighbors(
@@ -525,26 +621,16 @@ class SearchStore:
                     if row["chunk_id"] in seen:
                         continue
                     seen.add(row["chunk_id"])
-                    expanded.append(
-                        SearchHit(
-                            chunk_id=row["chunk_id"],
-                            doc_id=row["doc_id"],
-                            revision=row["revision"],
-                            title=row["title"],
-                            section=row["section"],
-                            text=row["text"],
-                            score=hit.score,
-                            source=hit.source,
-                            metadata=json.loads(row["metadata_json"]),
-                        )
-                    )
+                    expanded.append(_hit_from_chunk_row(row, 0, source=hit.source, score=hit.score))
         return expanded
 
     def citation_for_chunk(self, chunk_id: str) -> Citation | None:
         with self.connect() as conn:
             row = conn.execute(
                 """
-                SELECT c.chunk_id, c.section, d.doc_id, d.revision, d.title, d.filename, d.markdown_path
+                SELECT c.chunk_id, c.section, c.kind, c.metadata_json,
+                       d.doc_id, d.revision, d.title, d.filename,
+                       d.markdown_path, d.source_path
                 FROM chunks c
                 JOIN documents d ON d.doc_id = c.doc_id AND d.revision = c.revision
                 WHERE c.chunk_id = ?
@@ -553,6 +639,7 @@ class SearchStore:
             ).fetchone()
         if row is None:
             return None
+        metadata = json.loads(row["metadata_json"])
         return Citation(
             doc_id=row["doc_id"],
             revision=row["revision"],
@@ -560,14 +647,28 @@ class SearchStore:
             section=row["section"],
             filename=row["filename"],
             markdown_path=row["markdown_path"],
+            markdown_path_abs=_absolute_path(row["markdown_path"]),
+            source_path=row["source_path"],
+            source_path_abs=_absolute_path(row["source_path"]),
             chunk_id=row["chunk_id"],
+            evidence_type=_evidence_type(metadata, row["kind"]),
+            support_level=str(metadata.get("support_level") or _support_level(row["kind"])),
+            heading_path=tuple(str(item) for item in metadata.get("heading_path", []) if item),
+            table_index=_optional_int(metadata.get("table_index")),
+            row_start=_optional_int(metadata.get("row_start")),
+            row_end=_optional_int(metadata.get("row_end")),
+            columns=tuple(str(item) for item in metadata.get("columns", []) if item),
+            row_cells={
+                str(key): str(value)
+                for key, value in (metadata.get("row_cells") or {}).items()
+            },
         )
 
 
 REFERENCE_RE = re.compile(
-    r"\b(?:[A-Z]{2,5}-(?:P\d{2}|SWV)?-?\d{3}|BOM-\d{3}|ECR-\d{3}|ESF-\d{3}|"
+    r"\b(?:[A-Z0-9]{2,5}-(?:P\d{2}|SWV)?-?\d{2,3}|BOM-\d{3}|ECR-\d{3}|ESF-\d{3}|"
     r"DHF-\d{3}|DMR-\d{3}|DR-\d{3}|IFU-(?:\d{3}|[A-Z0-9]+)|QSR-\d{3}|"
-    r"TRA-\d{3}|3P-\d{2,3})\b",
+    r"TRA-\d{3}|3P-(?:P\d{2}-)?\d{2,3})\b",
     re.IGNORECASE,
 )
 
@@ -593,3 +694,76 @@ def _extract_references(item: dict[str, object]) -> list[tuple[str, str]]:
         end = min(match.end() + 80, len(text))
         references.append((target, " ".join(text[start:end].split())))
     return references
+
+
+def _hit_from_chunk_row(
+    row: sqlite3.Row,
+    index: int,
+    *,
+    source: str,
+    score: float | None = None,
+) -> SearchHit:
+    metadata = json.loads(row["metadata_json"])
+    return SearchHit(
+        chunk_id=row["chunk_id"],
+        doc_id=row["doc_id"],
+        revision=row["revision"],
+        title=row["title"],
+        section=row["section"],
+        text=row["text"],
+        score=score if score is not None else 1.0 / (index + 1),
+        source=source,
+        metadata=metadata,
+        evidence_type=_evidence_type(metadata, row["kind"]),
+        support_level=str(metadata.get("support_level") or _support_level(row["kind"])),
+        table_index=_optional_int(metadata.get("table_index")),
+        row_start=_optional_int(metadata.get("row_start")),
+        row_end=_optional_int(metadata.get("row_end")),
+        heading_path=tuple(str(item) for item in metadata.get("heading_path", []) if item),
+        columns=tuple(str(item) for item in metadata.get("columns", []) if item),
+        row_cells={
+            str(key): str(value)
+            for key, value in (metadata.get("row_cells") or {}).items()
+        },
+    )
+
+
+def _evidence_type(metadata: dict[str, object], kind: str) -> str:
+    value = metadata.get("evidence_type")
+    if isinstance(value, str) and value:
+        return value
+    if kind == "metadata":
+        return "metadata"
+    if kind == "table_row":
+        return "table_row"
+    if kind == "table":
+        return "table_full"
+    return "prose"
+
+
+def _support_level(kind: str) -> str:
+    if kind == "metadata":
+        return "document"
+    if kind == "table_row":
+        return "row"
+    if kind == "table":
+        return "table"
+    return "chunk"
+
+
+def _optional_int(value: object) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _absolute_path(value: object) -> str | None:
+    if value in (None, ""):
+        return None
+    path = Path(str(value)).expanduser()
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return str(path.resolve(strict=False))

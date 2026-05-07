@@ -4,6 +4,11 @@ from pathlib import Path
 
 from agent.search.docx_extract import extract_docx
 from agent.search.ingest import ingest_corpus
+from agent.search.index_contracts import (
+    ARTIFACT_CONTRACT_VERSION,
+    INGEST_MANIFEST_ARTIFACT_TYPE,
+    INGEST_MANIFEST_SCHEMA_VERSION,
+)
 from agent.search.metadata import (
     document_family,
     parse_document_metadata,
@@ -110,6 +115,9 @@ def test_ingest_corpus_records_metadata_only_warning_for_empty_docx(tmp_path):
     manifest = ingest_corpus(zip_path, tmp_path / "index")
 
     assert manifest["document_count"] == 1
+    assert manifest["artifact_type"] == INGEST_MANIFEST_ARTIFACT_TYPE
+    assert manifest["artifact_contract_version"] == ARTIFACT_CONTRACT_VERSION
+    assert manifest["schema_version"] == INGEST_MANIFEST_SCHEMA_VERSION
     assert manifest["metadata_only_count"] == 1
     assert manifest["documents"][0]["warnings"] == ["empty_body_metadata_only"]
     assert manifest["documents"][0]["family"] == "BOM"

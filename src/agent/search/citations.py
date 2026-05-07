@@ -71,11 +71,51 @@ def validate_citation_rows(store: SearchStore, citations: list[dict[str, object]
                     if citation.get("markdown_path") is not None
                     else None
                 ),
+                markdown_path_abs=(
+                    str(citation.get("markdown_path_abs"))
+                    if citation.get("markdown_path_abs") is not None
+                    else None
+                ),
+                source_path=(
+                    str(citation.get("source_path"))
+                    if citation.get("source_path") is not None
+                    else None
+                ),
+                source_path_abs=(
+                    str(citation.get("source_path_abs"))
+                    if citation.get("source_path_abs") is not None
+                    else None
+                ),
                 chunk_id=(
                     str(citation.get("chunk_id"))
                     if citation.get("chunk_id") is not None
                     else None
                 ),
+                evidence_type=str(citation.get("evidence_type") or "metadata"),
+                support_level=str(citation.get("support_level") or "document"),
+                heading_path=tuple(
+                    str(item)
+                    for item in citation.get("heading_path", ())
+                    if item
+                )
+                if isinstance(citation.get("heading_path", ()), (list, tuple))
+                else (),
+                table_index=_optional_int(citation.get("table_index")),
+                row_start=_optional_int(citation.get("row_start")),
+                row_end=_optional_int(citation.get("row_end")),
+                columns=tuple(
+                    str(item)
+                    for item in citation.get("columns", ())
+                    if item
+                )
+                if isinstance(citation.get("columns", ()), (list, tuple))
+                else (),
+                row_cells={
+                    str(key): str(value)
+                    for key, value in (citation.get("row_cells") or {}).items()
+                }
+                if isinstance(citation.get("row_cells"), dict)
+                else {},
             )
         )
     return validate_citations(store, rows)
@@ -90,3 +130,12 @@ def _document_exists(store: SearchStore, doc_id: str, revision: str) -> bool:
             (doc_id.upper(), revision.upper()),
         ).fetchone()
     return row is not None
+
+
+def _optional_int(value: object) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None

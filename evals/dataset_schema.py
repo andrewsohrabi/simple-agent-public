@@ -34,6 +34,12 @@ REQUIRED_RECORD_KEYS = {
     "dimensions",
 }
 REQUIRED_EXPECTED_KEYS = {"must_include", "source_ids", "answer_type"}
+OPTIONAL_EXPECTED_KEYS = {
+    "must_not_include",
+    "required_backend",
+    "required_doc_ids",
+    "required_table_evidence",
+}
 REQUIRED_DIMENSION_KEYS = {
     "persona",
     "revision_scope",
@@ -52,6 +58,10 @@ class ExpectedEvidence:
     must_include: tuple[str, ...]
     source_ids: tuple[str, ...]
     answer_type: str
+    must_not_include: tuple[str, ...] = ()
+    required_backend: str | None = None
+    required_doc_ids: tuple[str, ...] = ()
+    required_table_evidence: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -75,6 +85,12 @@ class QmsEvalCase:
                 must_include=tuple(expected["must_include"]),
                 source_ids=tuple(expected["source_ids"]),
                 answer_type=expected["answer_type"],
+                must_not_include=tuple(expected.get("must_not_include", ())),
+                required_backend=expected.get("required_backend"),
+                required_doc_ids=tuple(expected.get("required_doc_ids", ())),
+                required_table_evidence=tuple(
+                    expected.get("required_table_evidence", ())
+                ),
             ),
             tags=tuple(record["tags"]),
             difficulty=record["difficulty"],
@@ -241,7 +257,7 @@ def validate_record(record: dict[str, Any], *, index: int | None = None) -> list
     if missing_expected:
         errors.append(f"{prefix}expected missing keys {sorted(missing_expected)}")
 
-    extra_expected = set(expected) - REQUIRED_EXPECTED_KEYS
+    extra_expected = set(expected) - REQUIRED_EXPECTED_KEYS - OPTIONAL_EXPECTED_KEYS
     if extra_expected:
         errors.append(f"{prefix}expected has unknown keys {sorted(extra_expected)}")
 
@@ -256,6 +272,26 @@ def validate_record(record: dict[str, Any], *, index: int | None = None) -> list
     answer_type = expected.get("answer_type")
     if not isinstance(answer_type, str) or not answer_type:
         errors.append(f"{prefix}expected.answer_type must be a non-empty string")
+
+    must_not_include = expected.get("must_not_include")
+    if must_not_include is not None and not _is_string_list(must_not_include):
+        errors.append(f"{prefix}expected.must_not_include must be a list of strings")
+
+    required_doc_ids = expected.get("required_doc_ids")
+    if required_doc_ids is not None and not _is_string_list(required_doc_ids):
+        errors.append(f"{prefix}expected.required_doc_ids must be a list of strings")
+
+    required_table_evidence = expected.get("required_table_evidence")
+    if required_table_evidence is not None and not _is_string_list(required_table_evidence):
+        errors.append(
+            f"{prefix}expected.required_table_evidence must be a list of strings"
+        )
+
+    required_backend = expected.get("required_backend")
+    if required_backend is not None and (
+        not isinstance(required_backend, str) or not required_backend.strip()
+    ):
+        errors.append(f"{prefix}expected.required_backend must be a non-empty string")
 
     return errors
 
@@ -279,4 +315,10 @@ def _is_non_empty_string_list(value: Any) -> bool:
         isinstance(value, list)
         and bool(value)
         and all(isinstance(item, str) and bool(item.strip()) for item in value)
+    )
+
+
+def _is_string_list(value: Any) -> bool:
+    return isinstance(value, list) and all(
+        isinstance(item, str) and bool(item.strip()) for item in value
     )

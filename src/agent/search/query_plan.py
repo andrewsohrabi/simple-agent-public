@@ -4,7 +4,10 @@ import re
 from dataclasses import dataclass, field
 
 
-DOC_ID_PATTERN = re.compile(r"\b(?:[A-Z0-9]{2,5}-(?:P\d{2}|SWV)?-?\d{3}|BOM-\d{3}|ECR-\d{3}|ESF-\d{3})\b", re.IGNORECASE)
+DOC_ID_PATTERN = re.compile(
+    r"\b(?:[A-Z0-9]{2,5}-(?:P\d{2}|SWV)?-?\d{2,3}|BOM-\d{3}|ECR-\d{3}|ESF-\d{3})\b",
+    re.IGNORECASE,
+)
 REV_PATTERN = re.compile(r"\bRev(?:ision)?\s+([A-Z])\b", re.IGNORECASE)
 REV_PAIR_PATTERN = re.compile(
     r"\bRev(?:ision)?\s+([A-Z])\b.*?\bRev(?:ision)?\s+([A-Z])\b",
@@ -43,6 +46,7 @@ class QueryPlan:
     requires_list: bool = False
     requires_revision_chain: bool = False
     requires_diff: bool = False
+    intent: str | None = None
     compared_revisions: tuple[str, str] | None = None
     warnings: list[str] = field(default_factory=list)
 
@@ -84,6 +88,44 @@ def plan_query(query: str) -> QueryPlan:
     prefix = _infer_prefix(lower)
     if "risk file" in lower or "risk analysis" in lower:
         prefix = "RSK"
+    if "510(k)" in lower or "510k" in lower or "510 k" in lower:
+        return QueryPlan(
+            category="known_item",
+            strategy="exact_then_hybrid",
+            query=q,
+            doc_id=doc_id,
+            prefix=None,
+            revision=revision,
+            latest_only=latest_only,
+            include_obsolete=include_obsolete,
+            intent="510k_summary_location",
+        )
+    if "risk-related" in lower or "risk related" in lower:
+        return QueryPlan(
+            category="exploratory",
+            strategy="sql_list",
+            query=q,
+            doc_id=doc_id,
+            prefix=None,
+            revision=revision,
+            latest_only=latest_only,
+            include_obsolete=include_obsolete,
+            requires_list=True,
+            intent="risk_related_inventory",
+        )
+    if "completed vs. planned" in lower or "completed vs planned" in lower:
+        return QueryPlan(
+            category="enumeration",
+            strategy="sql_count",
+            query=q,
+            doc_id=doc_id,
+            prefix="VVPR",
+            revision=revision,
+            latest_only=False,
+            include_obsolete=include_obsolete,
+            requires_count=True,
+            intent="verification_completed_vs_planned",
+        )
     if any(term in lower for term in ["how many", "count", "number of"]):
         return QueryPlan(
             category="enumeration",
@@ -95,6 +137,7 @@ def plan_query(query: str) -> QueryPlan:
             latest_only=False,
             include_obsolete=include_obsolete,
             requires_count=True,
+            intent="ecr_count" if prefix == "ECR" else None,
         )
     if any(
         term in lower
@@ -140,6 +183,7 @@ def plan_query(query: str) -> QueryPlan:
             include_obsolete=True,
             requires_diff=True,
             compared_revisions=compared_revisions,
+            intent="ambiguous_risk_revision_diff" if prefix == "RSK" else None,
         )
     if any(
         term in lower
@@ -161,8 +205,16 @@ def plan_query(query: str) -> QueryPlan:
             latest_only=False,
             include_obsolete=include_obsolete,
             requires_list=bool(prefix),
+            intent="ecr_last_year_status" if prefix == "ECR" else None,
         )
     if any(term in lower for term in ["trace", "map", "link", "through to", "cross-reference"]):
+        intent = None
+        if "leakage" in lower and ("risk file" in lower or "verification report" in lower):
+            intent = "electrical_leakage_trace"
+        elif "verification protocol" in lower and "risk analysis" in lower:
+            intent = "risk_protocol_trace"
+        elif ("third-party" in lower or "third party" in lower) and "regulatory" in lower:
+            intent = "third_party_report_mapping"
         return QueryPlan(
             category="traceability",
             strategy="multi_hop",
@@ -172,6 +224,7 @@ def plan_query(query: str) -> QueryPlan:
             revision=revision,
             latest_only=latest_only,
             include_obsolete=include_obsolete,
+            intent=intent,
         )
     if any(
         term in lower
@@ -185,6 +238,7 @@ def plan_query(query: str) -> QueryPlan:
             "design history file include",
         ]
     ):
+        intent = "dhf_82030" if "design history file" in lower and "820.30" in lower else None
         return QueryPlan(
             category="compliance",
             strategy="hybrid",
@@ -194,11 +248,17 @@ def plan_query(query: str) -> QueryPlan:
             revision=revision,
             latest_only=latest_only,
             include_obsolete=include_obsolete,
+            intent=intent,
         )
     if any(
         term in lower
         for term in ["acceptance criteria", "summarize", "extract", "action items", "status"]
     ):
+        intent = None
+        if "acceptance criteria" in lower and "electrical safety" in lower:
+            intent = "electrical_safety_acceptance"
+        elif "design review" in lower and "action item" in lower and "open" in lower:
+            intent = "open_design_review_actions"
         return QueryPlan(
             category="extraction",
             strategy="hybrid",
@@ -208,6 +268,7 @@ def plan_query(query: str) -> QueryPlan:
             revision=revision,
             latest_only=latest_only,
             include_obsolete=include_obsolete,
+            intent=intent,
         )
     if prefix and any(
         term in lower
@@ -234,8 +295,12 @@ def plan_query(query: str) -> QueryPlan:
             latest_only=latest_only,
             include_obsolete=include_obsolete,
             requires_list=True,
+            intent="vvpr_inventory" if prefix == "VVPR" and "mx1" in lower else None,
         )
     if doc_id or any(term in lower for term in ["find", "where is", "show me the"]):
+        intent = None
+        if prefix == "BOM" and "mx1" in lower and "system" in lower:
+            intent = "mx1_bom"
         return QueryPlan(
             category="known_item",
             strategy="exact_then_hybrid",
@@ -245,6 +310,7 @@ def plan_query(query: str) -> QueryPlan:
             revision=revision,
             latest_only=latest_only,
             include_obsolete=include_obsolete,
+            intent=intent,
         )
     return QueryPlan(
         category="exploratory",

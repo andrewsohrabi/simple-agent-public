@@ -29,36 +29,56 @@ def test_query_plan_classifies_core_sample_queries():
             "known_item",
             "exact_then_hybrid",
             "BOM",
+            "mx1_bom",
         ),
         "What verification test protocols do we have for the MX1? Group them by protocol family.": (
             "exploratory",
             "sql_list",
             "VVPR",
+            "vvpr_inventory",
         ),
         "How many engineering change requests are in the system?": (
             "enumeration",
             "sql_count",
             "ECR",
+            "ecr_count",
         ),
         "What are the acceptance criteria for the electrical safety verification test?": (
             "extraction",
             "hybrid",
             "VVPR",
+            "electrical_safety_acceptance",
         ),
         "Does our Design History File include everything required by FDA 21 CFR 820.30?": (
             "compliance",
             "hybrid",
             "DHF",
+            "dhf_82030",
         ),
         "Trace the requirement for electrical leakage testing from the risk file through to the verification report.": (
             "traceability",
             "multi_hop",
             "RSK",
+            "electrical_leakage_trace",
         ),
     }
     for query, expected in cases.items():
         plan = plan_query(query)
-        assert (plan.category, plan.strategy, plan.prefix) == expected
+        assert (plan.category, plan.strategy, plan.prefix, plan.intent) == expected
+
+
+def test_query_plan_sets_specialized_qms_intents():
+    cases = {
+        "Where is the 510(k) summary for the device?": "510k_summary_location",
+        "Show me all risk-related documents": "risk_related_inventory",
+        "Which verification protocols trace back to the risk analysis?": "risk_protocol_trace",
+        "Summarize all design review action items that are still open": "open_design_review_actions",
+        "Show me all ECRs filed in the last year and their status": "ecr_last_year_status",
+        "Map all third-party test reports to the regulatory requirements they satisfy": "third_party_report_mapping",
+        "How many verification protocols have we completed vs. planned?": "verification_completed_vs_planned",
+    }
+    for query, intent in cases.items():
+        assert plan_query(query).intent == intent
 
 
 def test_query_plan_routes_revision_inventory_to_sql():

@@ -6,9 +6,9 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const MODES = [
   { id: 'auto', label: 'Auto', detail: 'Hosted search when available, local fallback otherwise.' },
-  { id: 'hosted', label: 'Hosted', detail: 'Prefer OpenAI File Search over normalized Markdown.' },
-  { id: 'local', label: 'Local', detail: 'Use SQLite FTS and FAISS local retrieval.' },
-  { id: 'hybrid', label: 'Hybrid', detail: 'Blend lexical, dense, and reranked candidates.' },
+  { id: 'hosted', label: 'Hosted', detail: 'Prefer OpenAI File Search; report local fallback when used.' },
+  { id: 'hybrid', label: 'Hybrid', detail: 'Strict local hybrid (SQLite FTS + FAISS + reranker).' },
+  { id: 'local', label: 'Local', detail: 'Local-only SQLite FTS + FAISS retrieval.' },
 ]
 
 const TABS = [
@@ -37,6 +37,8 @@ const INITIAL_RESULT = {
   lastQuery: '',
   latencyMs: null,
   mode: 'auto',
+  retrievalBackend: null,
+  debugTrace: null,
 }
 
 export default function App() {
@@ -118,7 +120,7 @@ export default function App() {
       })
       const data = await readResponse(response)
       if (!response.ok) throw new Error(errorMessage(data, response))
-      setResult(normalizeResult(data, trimmed, performance.now() - startedAt))
+      setResult(normalizeResult(data, trimmed, performance.now() - startedAt, mode))
     } catch (error) {
       setResult({
         ...INITIAL_RESULT,
@@ -157,7 +159,7 @@ export default function App() {
               <h2 id="composer-heading">Ask the controlled corpus</h2>
             </div>
             <div className="console-metrics" aria-live="polite">
-              <Metric label="Mode" value={selectedMode.label} />
+              <Metric label="Selected Mode" value={selectedMode.label} />
               <Metric label="Depth" value={String(limit)} />
               <Metric label="Latency" value={formatLatency(result.latencyMs)} />
             </div>
@@ -285,6 +287,7 @@ function ResultsTab({ result, evidenceRows, onRetry, onOpenSource }) {
             <span>Query</span>
             <p>{result.lastQuery}</p>
           </div>
+          <ResultRunDetails result={result} />
           <EvidenceQuality result={result} evidenceRows={evidenceRows} />
           <FormattedAnswer text={result.answer} />
           {evidenceRows.length > 0 && (
@@ -325,6 +328,7 @@ function SourcesTab({ result, evidenceRows, selectedSourceKey, onSelectSource })
               </button>
               <div className="source-meta">
                 <span>{row.section}</span>
+                <span>{row.evidenceLabel}</span>
                 <span>{row.filename}</span>
                 <span>{row.source}</span>
               </div>
@@ -339,6 +343,7 @@ function SourcesTab({ result, evidenceRows, selectedSourceKey, onSelectSource })
 function TraceTab({ result }) {
   const planEntries = objectEntries(result.queryPlan)
   const warningRows = Array.isArray(result.warnings) ? result.warnings : []
+  const debugEntries = objectEntries(result.debugTrace)
   return (
     <section id="panel-trace" role="tabpanel" aria-labelledby="tab-trace" className="tab-panel" tabIndex="0">
       <PanelHeading eyebrow="Trace" title="Routing & Fallbacks" status={result.queryPlan?.strategy ?? result.status} />
@@ -346,6 +351,13 @@ function TraceTab({ result }) {
       {result.status === 'loading' && <CompactState copy="Building query plan..." loading />}
       {result.status !== 'idle' && result.status !== 'loading' && (
         <div className="trace-grid">
+          <div className="trace-card" role="group" aria-label="Retrieval debug contract">
+            <h3>Retrieval Contract</h3>
+            <dl className="key-value-list">
+              <Detail label="Selected Mode" value={modeDisplayName(result.mode)} />
+              <Detail label="Retrieval Backend" value={formatRetrievalBackend(result.retrievalBackend)} />
+            </dl>
+          </div>
           <div className="trace-card">
             <h3>Query Plan</h3>
             {planEntries.length > 0 ? (
@@ -364,6 +376,16 @@ function TraceTab({ result }) {
               </ul>
             ) : (
               <CompactState copy="No fallback or citation warnings were returned." />
+            )}
+          </div>
+          <div className="trace-card">
+            <h3>Debug Trace</h3>
+            {debugEntries.length > 0 ? (
+              <dl className="key-value-list">
+                {debugEntries.map(([key, value]) => <Detail key={key} label={key} value={formatValue(value)} />)}
+              </dl>
+            ) : (
+              <CompactState copy="No detailed debug trace returned by the backend." />
             )}
           </div>
         </div>
@@ -455,6 +477,9 @@ function SourceDrawer({ source, result, onClose }) {
           </div>
           <dl className="key-value-list">
             <Detail label="Section" value={source.section} />
+            <Detail label="Evidence" value={source.evidenceLabel} />
+            <Detail label="Columns" value={source.columns.join(', ')} />
+            <Detail label="Row Cells" value={Object.keys(source.rowCells).length ? JSON.stringify(source.rowCells) : ''} />
             <Detail label="Filename" value={source.filename} />
             <Detail label="Markdown" value={source.markdownPath} />
             <Detail label="Chunk" value={source.chunkId} />
@@ -489,7 +514,8 @@ function DevPanel({ stats, statsStatus, statsError, result, apiUrl }) {
             <Detail label="API URL" value={apiUrl} />
             <Detail label="Stats" value={statsStatus === 'error' ? statsError : statsStatus} />
             <Detail label="Result" value={result.status} />
-            <Detail label="Mode" value={result.mode} />
+            <Detail label="Selected Mode" value={modeDisplayName(result.mode)} />
+            <Detail label="Retrieval Backend" value={formatRetrievalBackend(result.retrievalBackend)} />
           </dl>
           <pre className="debug-pre">{JSON.stringify({ stats, result }, null, 2)}</pre>
         </div>
@@ -515,6 +541,15 @@ function Metric({ label, value }) {
     <div className="metric">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  )
+}
+
+function ResultRunDetails({ result }) {
+  return (
+    <div className="result-meta-grid" role="group" aria-label="Retrieval run details">
+      <Metric label="Selected Mode" value={modeDisplayName(result.mode)} />
+      <Metric label="Retrieval Backend" value={formatRetrievalBackend(result.retrievalBackend)} />
     </div>
   )
 }
@@ -649,7 +684,7 @@ async function readResponse(response) {
   return { answer: await response.text() }
 }
 
-function normalizeResult(data, query, latencyMs) {
+function normalizeResult(data, query, latencyMs, requestedMode) {
   return {
     status: 'success',
     answer: String(data.answer ?? data.reply ?? ''),
@@ -657,7 +692,9 @@ function normalizeResult(data, query, latencyMs) {
     retrievedDocuments: Array.isArray(data.retrieved_documents) ? data.retrieved_documents : [],
     queryPlan: data.query_plan && !data.query_plan.error ? data.query_plan : data.query_plan ?? null,
     warnings: Array.isArray(data.warnings) ? data.warnings : [],
-    mode: data.mode ?? 'auto',
+    mode: requestedMode ?? data.mode ?? 'auto',
+    retrievalBackend: data.retrieval_backend ?? data.retrievalBackend ?? null,
+    debugTrace: data.debug_trace ?? data.debugTrace ?? null,
     lastQuery: query,
     latencyMs,
   }
@@ -690,9 +727,17 @@ function toEvidenceRow(citation, evidence, index) {
   const chunkId = citation?.chunk_id ?? evidence?.chunk_id ?? null
   const key = `${docId}-${revision}-${section}-${chunkId ?? 'metadata'}-${index}`
   const flags = []
+  const evidenceType = citation?.evidence_type ?? evidence?.evidence_type ?? metadata.evidence_type ?? 'metadata'
+  const supportLevel = citation?.support_level ?? evidence?.support_level ?? metadata.support_level ?? 'document'
+  const tableIndex = citation?.table_index ?? evidence?.table_index ?? metadata.table_index ?? null
+  const rowStart = citation?.row_start ?? evidence?.row_start ?? metadata.row_start ?? null
+  const rowEnd = citation?.row_end ?? evidence?.row_end ?? metadata.row_end ?? null
+  const columns = arrayValue(citation?.columns ?? evidence?.columns ?? metadata.columns)
+  const rowCells = objectValue(citation?.row_cells ?? evidence?.row_cells ?? metadata.row_cells)
   if (metadata.is_latest) flags.push('latest')
   if (metadata.is_obsolete) flags.push('obsolete')
   if (section === 'metadata_inventory') flags.push('metadata')
+  if (evidenceType === 'table_row') flags.push('table row')
   if (!citation) flags.push('uncited')
   if (evidence?.source === 'reference_follow') flags.push('reference follow')
   return {
@@ -706,9 +751,36 @@ function toEvidenceRow(citation, evidence, index) {
     chunkId: chunkId ?? 'Metadata inventory',
     score: evidence?.score,
     source: evidence?.source ?? 'citation',
+    evidenceType,
+    supportLevel,
+    tableIndex,
+    rowStart,
+    rowEnd,
+    columns,
+    rowCells,
+    evidenceLabel: evidenceLabel(evidenceType, supportLevel, tableIndex, rowStart, rowEnd),
     flags,
     referenceText: metadata.reference_text,
   }
+}
+
+function evidenceLabel(type, support, tableIndex, rowStart, rowEnd) {
+  const parts = [`${type} / ${support}`]
+  if (tableIndex !== null && tableIndex !== undefined && tableIndex !== '') parts.push(`Table ${tableIndex}`)
+  if (rowStart !== null && rowStart !== undefined && rowStart !== '') {
+    let row = `Row ${rowStart}`
+    if (rowEnd !== null && rowEnd !== undefined && rowEnd !== '' && rowEnd !== rowStart) row += `-${rowEnd}`
+    parts.push(row)
+  }
+  return parts.join(' -> ')
+}
+
+function arrayValue(value) {
+  return Array.isArray(value) ? value.map(item => String(item)) : []
+}
+
+function objectValue(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 }
 
 function filterRows(rows, filter) {
@@ -755,6 +827,14 @@ function getInitialLimit() {
 function formatLatency(latencyMs) {
   if (latencyMs === null || latencyMs === undefined) return 'Not run'
   return `${Math.round(latencyMs).toLocaleString()} ms`
+}
+
+function modeDisplayName(value) {
+  return MODES.find(item => item.id === value)?.label ?? toTitleCase(value ?? 'auto')
+}
+
+function formatRetrievalBackend(value) {
+  return value ? String(value) : 'Not reported'
 }
 
 function formatScore(score) {

@@ -18,7 +18,7 @@ DOC_ID_RE = re.compile(
     r"|IFU-(?:\d{3}|[A-Z0-9]+)"
     r"|QSR-\d{3}"
     r"|TRA-\d{3}"
-    r"|3P-\d{3}"
+    r"|3P-(?:P\d{2}-)?\d{2,3}"
     r")\b"
 )
 REV_SUFFIX_RE = re.compile(r"(?:^|[_\-\s])([A-Z])(?:$|[_\-\s])")

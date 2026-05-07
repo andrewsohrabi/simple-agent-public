@@ -199,3 +199,36 @@ def test_count_and_obsolete_metrics_are_deterministic_guardrails():
     assert leakage_score.obsolete_leakage is True
     assert summary["count_accuracy"] == 1.0
     assert summary["obsolete_leakage_rate"] == 0.5
+
+
+def test_must_not_include_terms_fail_otherwise_matching_answers():
+    case = QmsEvalCase(
+        id="qms_cross_document_analysis_001",
+        category="cross_document_analysis",
+        prompt="Trace electrical leakage evidence.",
+        expected=ExpectedEvidence(
+            must_include=("electrical leakage", "verification"),
+            source_ids=("RSK",),
+            answer_type="source_grounded_answer",
+            must_not_include=("VVPR-P00", "TRA"),
+        ),
+        tags=("qms",),
+        difficulty="basic",
+        dimensions={
+            "persona": "regulatory_affairs",
+            "revision_scope": "all",
+            "answerability": "answerable",
+            "noise": "none",
+            "citation_burden": "single_source",
+        },
+    )
+
+    score = score_case(
+        case,
+        "Electrical leakage verification is linked through TRA to VVPR-P00-179.",
+        source_ids=["RSK-P01-010"],
+    )
+
+    assert score.total_score == 1.0
+    assert not score.passed
+    assert score.forbidden_terms_present == ("VVPR-P00", "TRA")

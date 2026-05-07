@@ -9,6 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from agent.search.docx_extract import extract_docx
+from agent.search.index_contracts import (
+    ARTIFACT_CONTRACT_VERSION,
+    INGEST_MANIFEST_ARTIFACT_TYPE,
+    INGEST_MANIFEST_FILENAME,
+    INGEST_MANIFEST_SCHEMA_VERSION,
+)
 from agent.search.metadata import (
     document_family,
     mark_latest,
@@ -119,6 +125,9 @@ def ingest_corpus(zip_path: Path, output_dir: Path) -> dict[str, object]:
         normalized_docs.append(normalized)
 
     manifest = {
+        "artifact_type": INGEST_MANIFEST_ARTIFACT_TYPE,
+        "artifact_contract_version": ARTIFACT_CONTRACT_VERSION,
+        "schema_version": INGEST_MANIFEST_SCHEMA_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
         "source_zip": str(zip_path),
         "source_sha256": zip_hash,
@@ -145,14 +154,14 @@ def ingest_corpus(zip_path: Path, output_dir: Path) -> dict[str, object]:
             for doc in normalized_docs
         ],
     }
-    (output_dir / "ingest_manifest.json").write_text(
+    (output_dir / INGEST_MANIFEST_FILENAME).write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
     return manifest
 
 
 def load_ingest_manifest(index_dir: Path) -> dict[str, object] | None:
-    path = index_dir / "ingest_manifest.json"
+    path = index_dir / INGEST_MANIFEST_FILENAME
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))

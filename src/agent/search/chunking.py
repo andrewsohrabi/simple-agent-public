@@ -341,14 +341,56 @@ def _emit_table_chunks(
     config: SearchConfig,
 ) -> int:
     lines = [line for line in table.splitlines() if line.strip()]
-    header = _format_table_row(lines[0]) if lines else ""
-    rows = [
-        _format_table_row(line)
-        for line in lines[1:]
-        if not TABLE_SEPARATOR_RE.match(line)
-    ]
+    parsed = _parse_table_lines(lines)
+    header = " | ".join(parsed["columns"])
+    rows = [" | ".join(row) for row in parsed["rows"]]
     table_name = heading_path[-1] if heading_path else "Table"
-    if count_tokens(table) <= config.table_chunk_max_tokens:
+    table_index = _table_index(table_name)
+
+    if len(rows) <= 3 and count_tokens(table) <= config.table_chunk_max_tokens:
+        raw = _table_text(table_name, header, rows)
+        chunk_index = _append_chunk(
+            chunks,
+            metadata,
+            raw,
+            heading_path,
+            "table",
+            chunk_index,
+            ordinal_start,
+            ordinal_start + max(len(rows) - 1, 0),
+            evidence_type="table_full",
+            support_level="table",
+            table_index=table_index,
+            row_start=1 if rows else None,
+            row_end=len(rows) if rows else None,
+            columns=tuple(parsed["columns"]),
+        )
+    if len(parsed["rows"]) <= config.table_row_chunk_max_rows:
+        for row_number, row_cells in enumerate(parsed["rows"], start=1):
+            row_map = _row_cell_map(parsed["columns"], row_cells)
+            raw = _table_row_text(table_name, row_number, row_map)
+            chunk_index = _append_chunk(
+                chunks,
+                metadata,
+                raw,
+                heading_path,
+                "table_row",
+                chunk_index,
+                ordinal_start + row_number - 1,
+                ordinal_start + row_number - 1,
+                evidence_type="table_row",
+                support_level="row",
+                table_index=table_index,
+                row_start=row_number,
+                row_end=row_number,
+                columns=tuple(parsed["columns"]),
+                row_cells=row_map,
+            )
+
+    if len(rows) <= 3:
+        return chunk_index
+
+    if len(rows) > 3 and count_tokens(table) <= config.table_chunk_max_tokens:
         raw = _table_text(table_name, header, rows)
         return _append_chunk(
             chunks,
@@ -359,6 +401,12 @@ def _emit_table_chunks(
             chunk_index,
             ordinal_start,
             ordinal_start + max(len(rows) - 1, 0),
+            evidence_type="table_full",
+            support_level="table",
+            table_index=table_index,
+            row_start=1 if rows else None,
+            row_end=len(rows) if rows else None,
+            columns=tuple(parsed["columns"]),
         )
 
     current_rows: list[str] = []
@@ -377,6 +425,12 @@ def _emit_table_chunks(
                 chunk_index,
                 ordinal_start + row_number - len(current_rows),
                 ordinal_start + row_number - 1,
+                evidence_type="table_full",
+                support_level="row_group",
+                table_index=table_index,
+                row_start=row_number - len(current_rows),
+                row_end=row_number - 1,
+                columns=tuple(parsed["columns"]),
             )
             current_rows = []
             current_tokens = count_tokens(header)
@@ -394,8 +448,63 @@ def _emit_table_chunks(
             chunk_index,
             ordinal_start + row_number - len(current_rows),
             ordinal_start + row_number - 1,
+            evidence_type="table_full",
+            support_level="row_group",
+            table_index=table_index,
+            row_start=row_number - len(current_rows),
+            row_end=row_number - 1,
+            columns=tuple(parsed["columns"]),
         )
     return chunk_index
+
+
+def _parse_table_lines(lines: list[str]) -> dict[str, list[list[str]] | list[str]]:
+    rows = [_split_table_row(line) for line in lines if not TABLE_SEPARATOR_RE.match(line)]
+    if not rows:
+        return {"columns": [], "rows": []}
+    header_index = 0
+    if len(rows) > 1 and _looks_like_table_title_row(rows[0]):
+        header_index = 1
+    columns = [_clean_column(cell, index) for index, cell in enumerate(rows[header_index])]
+    body_rows = rows[header_index + 1 :]
+    if not columns:
+        columns = [f"Column {index + 1}" for index in range(max((len(row) for row in body_rows), default=0))]
+    normalized_rows = [
+        [*row, *([""] * (len(columns) - len(row)))]
+        for row in body_rows
+    ]
+    return {"columns": columns, "rows": [row[: len(columns)] for row in normalized_rows]}
+
+
+def _split_table_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _looks_like_table_title_row(row: list[str]) -> bool:
+    non_empty = [cell for cell in row if cell.strip()]
+    if len(non_empty) <= 1 and len(row) > 1:
+        return True
+    return len(non_empty) < max(1, len(row) // 2)
+
+
+def _clean_column(cell: str, index: int) -> str:
+    value = " ".join(cell.split())
+    return value or f"Column {index + 1}"
+
+
+def _row_cell_map(columns: list[str], row: list[str]) -> dict[str, str]:
+    cells = [*row, *([""] * (len(columns) - len(row)))]
+    return {column: cells[index].strip() for index, column in enumerate(columns)}
+
+
+def _table_row_text(table_name: str, row_number: int, row_cells: dict[str, str]) -> str:
+    values = " | ".join(f"{column}={value}" for column, value in row_cells.items())
+    return f"Table: {table_name}\nRow {row_number}: {values}"
+
+
+def _table_index(table_name: str) -> int | None:
+    match = re.search(r"\bTable\s+(\d+)\b", table_name, re.IGNORECASE)
+    return int(match.group(1)) if match else None
 
 
 def _format_table_row(line: str) -> str:
@@ -421,6 +530,13 @@ def _append_chunk(
     chunk_index: int,
     ordinal_start: int,
     ordinal_end: int,
+    evidence_type: str | None = None,
+    support_level: str | None = None,
+    table_index: int | None = None,
+    row_start: int | None = None,
+    row_end: int | None = None,
+    columns: tuple[str, ...] = (),
+    row_cells: dict[str, str] | None = None,
 ) -> int:
     chunks.append(
         _make_chunk(
@@ -432,6 +548,13 @@ def _append_chunk(
             chunk_index=chunk_index,
             ordinal_start=ordinal_start,
             ordinal_end=ordinal_end,
+            evidence_type=evidence_type,
+            support_level=support_level,
+            table_index=table_index,
+            row_start=row_start,
+            row_end=row_end,
+            columns=columns,
+            row_cells=row_cells,
         )
     )
     return chunk_index + 1
@@ -447,6 +570,13 @@ def _make_chunk(
     chunk_index: int,
     ordinal_start: int,
     ordinal_end: int,
+    evidence_type: str | None = None,
+    support_level: str | None = None,
+    table_index: int | None = None,
+    row_start: int | None = None,
+    row_end: int | None = None,
+    columns: tuple[str, ...] = (),
+    row_cells: dict[str, str] | None = None,
 ) -> Chunk:
     parent_section_id = _parent_id(metadata, heading_path)
     search_text = metadata_preamble(metadata, section) + raw_text
@@ -454,6 +584,9 @@ def _make_chunk(
         f"{metadata.doc_id}:{metadata.revision}:{kind}:{chunk_index}:{section}:{raw_text}".encode()
     ).hexdigest()[:20]
     token_count = count_tokens(raw_text)
+    evidence_type = evidence_type or _evidence_type_for_kind(kind)
+    support_level = support_level or _support_level_for_kind(kind)
+    row_cells = row_cells or {}
     base_metadata = {
         "prefix": metadata.prefix,
         "is_latest": metadata.is_latest,
@@ -470,6 +603,13 @@ def _make_chunk(
         "ordinal_start": ordinal_start,
         "ordinal_end": ordinal_end,
         "token_count": token_count,
+        "evidence_type": evidence_type,
+        "support_level": support_level,
+        "table_index": table_index,
+        "row_start": row_start,
+        "row_end": row_end,
+        "columns": list(columns),
+        "row_cells": row_cells,
     }
     return Chunk(
         chunk_id=chunk_id,
@@ -488,7 +628,34 @@ def _make_chunk(
         ordinal_start=ordinal_start,
         ordinal_end=ordinal_end,
         token_count=token_count,
+        evidence_type=evidence_type,
+        support_level=support_level,
+        table_index=table_index,
+        row_start=row_start,
+        row_end=row_end,
+        columns=columns,
+        row_cells=row_cells,
     )
+
+
+def _evidence_type_for_kind(kind: str) -> str:
+    if kind == "metadata":
+        return "metadata"
+    if kind == "table":
+        return "table_full"
+    if kind == "table_row":
+        return "table_row"
+    return "prose"
+
+
+def _support_level_for_kind(kind: str) -> str:
+    if kind == "metadata":
+        return "document"
+    if kind == "table":
+        return "table"
+    if kind == "table_row":
+        return "row"
+    return "chunk"
 
 
 def _parent_id(metadata: DocumentMetadata, heading_path: tuple[str, ...]) -> str:

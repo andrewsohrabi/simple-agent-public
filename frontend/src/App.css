@@ -546,6 +546,20 @@ p {
   overflow-wrap: anywhere;
 }
 
+.result-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.result-meta-grid .metric {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  padding: 10px;
+}
+
 .inline-warning,
 .inline-success,
 .weak-state {
@@ -947,6 +961,7 @@ p {
   }
 
   .range-control,
+  .result-meta-grid,
   .state-banner {
     grid-template-columns: 1fr;
   }

@@ -27,6 +27,7 @@ class StubSearchService:
             "warnings": [],
             "mode": mode,
             "limit": limit,
+            "retrieval_backend": "local_hybrid",
         }
 
 
@@ -87,6 +88,7 @@ def test_search_uses_response_contract(monkeypatch):
     assert data["citations"][0]["doc_id"] == "BOM-055"
     assert data["query_plan"]["query"] == "Find BOM-055 Rev G"
     assert data["mode"] == "local"
+    assert data["retrieval_backend"] == "local_hybrid"
 
 
 def test_chat_uses_search_response_contract(monkeypatch):
@@ -106,6 +108,7 @@ def test_chat_uses_search_response_contract(monkeypatch):
     assert data["citations"][0]["doc_id"] == "BOM-055"
     assert data["query_plan"]["query"] == "How many ECRs are in the system?"
     assert data["mode"] == "local"
+    assert data["retrieval_backend"] == "local_hybrid"
 
 
 def test_chat_rejects_missing_user_message():

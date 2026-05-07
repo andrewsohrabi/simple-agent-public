@@ -11,6 +11,7 @@ from agent.search.sqlite_store import SearchStore
 def collect_stats(config: SearchConfig) -> dict[str, object]:
     store = SearchStore(config.index_dir / "qms.sqlite")
     vector_index = LocalVectorIndex(config.index_dir, config)
+    vector_stats = vector_index.stats()
     hosted_state = config.openai_vector_store_state
     hosted = {"exists": hosted_state.exists(), "state_path": str(hosted_state)}
     if hosted_state.exists():
@@ -40,7 +41,8 @@ def collect_stats(config: SearchConfig) -> dict[str, object]:
         },
         "corpus_zip_exists": Path(config.corpus_zip).exists(),
         "sqlite": store.stats(),
-        "vector_index": vector_index.stats(),
+        "vector_index": vector_stats,
+        "artifact_validation": vector_stats.get("validation", {}),
         "hosted_file_search": hosted,
         "reranker": LocalReranker(config).status(),
     }

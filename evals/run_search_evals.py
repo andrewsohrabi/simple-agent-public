@@ -99,6 +99,7 @@ def main() -> int:
             source_ids=answers.get(case.id, {}).get("source_ids", []),
             retrieved_source_ids=answers.get(case.id, {}).get("retrieved_source_ids", []),
             citations=answers.get(case.id, {}).get("citations"),
+            retrieval_backend=answers.get(case.id, {}).get("retrieval_backend"),
             expected_count=answers.get(case.id, {}).get("expected_count"),
             reported_count=answers.get(case.id, {}).get("reported_count"),
             latest_revision=answers.get(case.id, {}).get("latest_revision"),
@@ -138,7 +139,12 @@ def main() -> int:
 
     summary = aggregate_scores(scores)
     print(json.dumps(summary, indent=2, sort_keys=True))
-    return 0 if summary["average_score"] >= args.fail_under else 1
+    return (
+        0
+        if summary["average_score"] >= args.fail_under
+        and summary.get("passed") == summary.get("total")
+        else 1
+    )
 
 
 def load_answers(path: Path) -> dict[str, dict[str, Any]]:
@@ -190,6 +196,7 @@ def load_answers(path: Path) -> dict[str, dict[str, Any]]:
                 "source_ids": source_ids,
                 "retrieved_source_ids": retrieved_source_ids,
                 "citations": citations,
+                "retrieval_backend": record.get("retrieval_backend"),
                 "expected_count": expected_count,
                 "reported_count": reported_count,
                 "latest_revision": latest_revision,
@@ -228,6 +235,7 @@ def run_search_answers(cases: list[Any], *, mode: str, use_hash_embeddings: bool
             "source_ids": source_ids,
             "retrieved_source_ids": [source for source in retrieved_source_ids if source],
             "citations": citations if isinstance(citations, list) else [],
+            "retrieval_backend": result.get("retrieval_backend"),
             "reported_count": _extract_count(str(result.get("answer", ""))),
             "latest_revision": _latest_revision_from_documents(retrieved_documents),
             "retrieved_documents": retrieved_documents,

@@ -39,6 +39,12 @@ async function expectNoHorizontalOverflow(page) {
   )
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Headers': 'content-type',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Origin': '*',
+}
+
 test('loads desktop index status and model configuration', async ({ page }) => {
   const errors = watchBrowserErrors(page)
 
@@ -52,6 +58,84 @@ test('loads desktop index status and model configuration', async ({ page }) => {
   await expect(page.getByText('IndexFlatIP')).toBeVisible()
   await expect(page.getByText('189')).toBeVisible()
   await expect(page.getByText('7778')).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+  expect(errors).toEqual([])
+})
+
+test('separates selected mode from reported retrieval backend', async ({ page }) => {
+  const errors = watchBrowserErrors(page)
+
+  await page.route('**/stats', async route => {
+    await route.fulfill({
+      headers: corsHeaders,
+      json: {
+        corpus_zip_exists: true,
+        sqlite: { documents: 2, chunks: 4, references: 1 },
+        vector_index: { vectors: 4 },
+      },
+    })
+  })
+  await page.route('**/search', async route => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: corsHeaders })
+      return
+    }
+    expect(route.request().postDataJSON().mode).toBe('hybrid')
+    await route.fulfill({
+      headers: corsHeaders,
+      json: {
+        answer: 'Mock hybrid answer from source-backed evidence.',
+        citations: [
+          {
+            doc_id: 'BOM-055',
+            revision: 'G',
+            title: 'Bill of Materials',
+            section: 'metadata_inventory',
+            filename: 'BOM-055.docx',
+            markdown_path: null,
+            chunk_id: null,
+          },
+        ],
+        retrieved_documents: [
+          {
+            doc_id: 'BOM-055',
+            revision: 'G',
+            title: 'Bill of Materials',
+            section: 'metadata_inventory',
+            score: 0.98,
+            source: 'sqlite',
+            metadata: { filename: 'BOM-055.docx', is_latest: true, is_obsolete: false },
+          },
+        ],
+        query_plan: { strategy: 'hybrid', category: 'known_item' },
+        mode: 'hybrid',
+        retrieval_backend: 'local_hybrid',
+        warnings: ['reranker_backend:deterministic_fallback'],
+      },
+    })
+  })
+
+  await page.goto('/?mode=hybrid&limit=8')
+  await expect(page.getByText(/Strict local hybrid \(SQLite FTS \+ FAISS \+ reranker\)/)).toBeVisible()
+
+  await page.getByRole('textbox', { name: /prompt/i }).fill('Find BOM-055 Rev G')
+  await page.getByRole('button', { name: 'Search' }).click()
+
+  const runDetails = page.getByRole('group', { name: 'Retrieval run details' })
+  await expect(runDetails).toContainText('Selected Mode')
+  await expect(runDetails).toContainText('Hybrid')
+  await expect(runDetails).toContainText('Retrieval Backend')
+  await expect(runDetails).toContainText('local_hybrid')
+  await expect(page.getByText('reranker_backend:deterministic_fallback')).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Trace' }).click()
+  await expect(page.getByRole('group', { name: 'Retrieval debug contract' })).toContainText('local_hybrid')
+
+  await page.getByRole('button', { name: /Debug \/ Dev Panel/i }).click()
+  await expect(page.locator('.dev-panel-body')).toContainText('Selected Mode')
+  await expect(page.locator('.dev-panel-body')).toContainText('Retrieval Backend')
+  await expect(page.locator('.dev-panel-body')).toContainText('local_hybrid')
+
   await expectNoHorizontalOverflow(page)
   expect(errors).toEqual([])
 })

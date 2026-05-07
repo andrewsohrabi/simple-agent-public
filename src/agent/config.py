@@ -45,6 +45,7 @@ class SearchConfig:
     max_chunk_tokens: int = 900
     table_chunk_target_tokens: int = 700
     table_chunk_max_tokens: int = 900
+    table_row_chunk_max_rows: int = 50
     table_repeat_header: bool = True
     create_metadata_chunks: bool = True
     parent_section_max_tokens: int = 1800
@@ -94,6 +95,9 @@ class SearchConfig:
             ),
             table_chunk_max_tokens=_env_int(
                 "TABLE_CHUNK_MAX_TOKENS", cls.table_chunk_max_tokens
+            ),
+            table_row_chunk_max_rows=_env_int(
+                "TABLE_ROW_CHUNK_MAX_ROWS", cls.table_row_chunk_max_rows
             ),
             table_repeat_header=_env_bool(
                 "TABLE_REPEAT_HEADER", cls.table_repeat_header
@@ -169,6 +173,7 @@ class SearchConfig:
             "MAX_CHUNK_TOKENS": self.max_chunk_tokens,
             "TABLE_CHUNK_TARGET_TOKENS": self.table_chunk_target_tokens,
             "TABLE_CHUNK_MAX_TOKENS": self.table_chunk_max_tokens,
+            "TABLE_ROW_CHUNK_MAX_ROWS": self.table_row_chunk_max_rows,
             "PARENT_SECTION_MAX_TOKENS": self.parent_section_max_tokens,
             "HYBRID_TOP_N_LEXICAL": self.hybrid_top_n_lexical,
             "HYBRID_TOP_N_VECTOR": self.hybrid_top_n_vector,
@@ -217,6 +222,7 @@ class SearchConfig:
             "max_chunk_tokens": self.max_chunk_tokens,
             "table_chunk_target_tokens": self.table_chunk_target_tokens,
             "table_chunk_max_tokens": self.table_chunk_max_tokens,
+            "table_row_chunk_max_rows": self.table_row_chunk_max_rows,
             "table_repeat_header": self.table_repeat_header,
             "create_metadata_chunks": self.create_metadata_chunks,
             "parent_section_max_tokens": self.parent_section_max_tokens,

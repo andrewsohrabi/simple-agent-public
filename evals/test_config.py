@@ -19,6 +19,7 @@ def test_config_defaults_to_quality_baseline():
     assert config.max_chunk_tokens == 900
     assert config.table_chunk_target_tokens == 700
     assert config.table_chunk_max_tokens == 900
+    assert config.table_row_chunk_max_rows == 50
     assert config.create_metadata_chunks is True
     assert config.answer_context_neighbor_chunks == 1
     assert config.answer_synthesis_enabled is True

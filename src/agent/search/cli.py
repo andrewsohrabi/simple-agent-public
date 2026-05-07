@@ -108,6 +108,20 @@ def query_main() -> None:
     )
     parser.add_argument("--limit", default=16, type=int)
     parser.add_argument(
+        "--force-strategy",
+        choices=[
+            "hybrid",
+            "exact_then_hybrid",
+            "sql_count",
+            "sql_list",
+            "revision_chain",
+            "revision_diff",
+            "multi_hop",
+        ],
+        default=None,
+        help="Debug only: override the QMS query planner strategy.",
+    )
+    parser.add_argument(
         "--hash-embeddings",
         action="store_true",
         help="Use deterministic hash embeddings for local smoke tests instead of OpenAI.",
@@ -117,7 +131,12 @@ def query_main() -> None:
         config,
         use_hash_embeddings=args.hash_embeddings or config.use_hash_embeddings,
     )
-    result = service.search(args.query, mode=args.mode, limit=args.limit)
+    result = service.search(
+        args.query,
+        mode=args.mode,
+        limit=args.limit,
+        force_strategy=args.force_strategy,
+    )
     print(json.dumps(result, indent=2))
 
 

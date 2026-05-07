@@ -47,6 +47,13 @@ class Chunk:
     ordinal_start: int = 0
     ordinal_end: int = 0
     token_count: int = 0
+    evidence_type: str = "prose"
+    support_level: str = "chunk"
+    table_index: int | None = None
+    row_start: int | None = None
+    row_end: int | None = None
+    columns: tuple[str, ...] = ()
+    row_cells: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -60,6 +67,14 @@ class SearchHit:
     score: float
     source: str
     metadata: dict[str, object]
+    evidence_type: str = "prose"
+    support_level: str = "chunk"
+    table_index: int | None = None
+    row_start: int | None = None
+    row_end: int | None = None
+    heading_path: tuple[str, ...] = ()
+    columns: tuple[str, ...] = ()
+    row_cells: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -70,4 +85,15 @@ class Citation:
     section: str
     filename: str
     markdown_path: str | None = None
+    markdown_path_abs: str | None = None
+    source_path: str | None = None
+    source_path_abs: str | None = None
     chunk_id: str | None = None
+    evidence_type: str = "metadata"
+    support_level: str = "document"
+    heading_path: tuple[str, ...] = ()
+    table_index: int | None = None
+    row_start: int | None = None
+    row_end: int | None = None
+    columns: tuple[str, ...] = ()
+    row_cells: dict[str, str] = field(default_factory=dict)
