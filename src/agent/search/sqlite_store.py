@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from pathlib import Path
 
@@ -48,6 +49,26 @@ CREATE TABLE IF NOT EXISTS source_files (
   sha256 TEXT
 );
 
+CREATE TABLE IF NOT EXISTS revisions (
+  canonical_doc_key TEXT NOT NULL,
+  doc_id TEXT NOT NULL,
+  revision TEXT NOT NULL,
+  revision_rank INTEGER NOT NULL,
+  is_latest INTEGER NOT NULL,
+  is_obsolete INTEGER NOT NULL,
+  filename TEXT NOT NULL,
+  PRIMARY KEY (doc_id, revision)
+);
+
+CREATE TABLE IF NOT EXISTS doc_references (
+  source_doc_id TEXT NOT NULL,
+  source_revision TEXT NOT NULL,
+  target_doc_id TEXT NOT NULL,
+  reference_text TEXT NOT NULL,
+  source TEXT NOT NULL,
+  PRIMARY KEY (source_doc_id, source_revision, target_doc_id, reference_text)
+);
+
 CREATE TABLE IF NOT EXISTS ingest_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at TEXT NOT NULL,
@@ -83,6 +104,15 @@ class SearchStore:
         "token_count",
         "metadata_json",
     }
+    REQUIRED_TABLES = {
+        "documents",
+        "chunks",
+        "source_files",
+        "ingest_runs",
+        "revisions",
+        "doc_references",
+        "chunk_fts",
+    }
 
     def __init__(self, db_path: Path):
         self.db_path = db_path
@@ -101,6 +131,12 @@ class SearchStore:
         if not self.db_path.exists():
             return False
         with self.connect() as conn:
+            table_rows = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type IN ('table', 'virtual')"
+            ).fetchall()
+            tables = {str(row["name"]) for row in table_rows}
+            if not self.REQUIRED_TABLES.issubset(tables):
+                return False
             rows = conn.execute("PRAGMA table_info(chunks)").fetchall()
         columns = {str(row["name"]) for row in rows}
         return self.REQUIRED_CHUNK_COLUMNS.issubset(columns)
@@ -120,6 +156,8 @@ class SearchStore:
             conn.execute("DELETE FROM chunks")
             conn.execute("DELETE FROM documents")
             conn.execute("DELETE FROM source_files")
+            conn.execute("DELETE FROM revisions")
+            conn.execute("DELETE FROM doc_references")
             conn.execute(
                 """
                 INSERT INTO ingest_runs
@@ -166,6 +204,39 @@ class SearchStore:
                     "INSERT OR REPLACE INTO source_files (source_path, filename, sha256) VALUES (?, ?, ?)",
                     (item["source_path"], item["filename"], item.get("sha256")),
                 )
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO revisions
+                    (canonical_doc_key, doc_id, revision, revision_rank, is_latest, is_obsolete, filename)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        item["canonical_doc_key"],
+                        item["doc_id"],
+                        item["revision"],
+                        item["revision_rank"],
+                        int(bool(item["is_latest"])),
+                        int(bool(item["is_obsolete"])),
+                        item["filename"],
+                    ),
+                )
+                for target_doc_id, reference_text in _extract_references(item):
+                    if target_doc_id == item["doc_id"]:
+                        continue
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO doc_references
+                        (source_doc_id, source_revision, target_doc_id, reference_text, source)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (
+                            item["doc_id"],
+                            item["revision"],
+                            target_doc_id,
+                            reference_text,
+                            "normalized_markdown",
+                        ),
+                    )
             for chunk in chunks:
                 metadata_json = json.dumps(chunk.metadata, sort_keys=True)
                 conn.execute(
@@ -227,11 +298,13 @@ class SearchStore:
             docs = conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
             chunks = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
             latest = conn.execute("SELECT COUNT(*) FROM documents WHERE is_latest = 1").fetchone()[0]
+            references = conn.execute("SELECT COUNT(*) FROM doc_references").fetchone()[0]
             return {
                 "exists": True,
                 "documents": docs,
                 "chunks": chunks,
                 "latest_documents": latest,
+                "references": references,
                 "schema_current": True,
                 "requires_rebuild": False,
             }
@@ -290,6 +363,49 @@ class SearchStore:
             ).fetchall()
         docs = [dict(row) for row in rows]
         return {"prefix": prefix.upper(), "count": len(docs), "documents": docs}
+
+    def revision_chain(
+        self,
+        *,
+        doc_id: str | None = None,
+        prefix: str | None = None,
+        include_obsolete: bool = True,
+        limit: int = 50,
+    ) -> list[dict[str, object]]:
+        clauses: list[str] = []
+        values: list[object] = []
+        if doc_id:
+            clauses.append("doc_id = ?")
+            values.append(doc_id.upper())
+        if prefix:
+            clauses.append("doc_id IN (SELECT doc_id FROM documents WHERE prefix = ?)")
+            values.append(prefix.upper())
+        if not include_obsolete:
+            clauses.append("is_obsolete = 0")
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        query = f"""
+            SELECT * FROM revisions
+            {where}
+            ORDER BY canonical_doc_key, revision_rank
+            LIMIT ?
+        """
+        values.append(limit)
+        with self.connect() as conn:
+            rows = conn.execute(query, values).fetchall()
+        return [dict(row) for row in rows]
+
+    def references_from(self, doc_id: str, revision: str) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM doc_references
+                WHERE source_doc_id = ? AND source_revision = ?
+                ORDER BY target_doc_id
+                """,
+                (doc_id.upper(), revision.upper()),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def chunks_for_documents(
         self, documents: list[dict[str, object]], *, limit_per_doc: int = 1
@@ -446,3 +562,34 @@ class SearchStore:
             markdown_path=row["markdown_path"],
             chunk_id=row["chunk_id"],
         )
+
+
+REFERENCE_RE = re.compile(
+    r"\b(?:[A-Z]{2,5}-(?:P\d{2}|SWV)?-?\d{3}|BOM-\d{3}|ECR-\d{3}|ESF-\d{3}|"
+    r"DHF-\d{3}|DMR-\d{3}|DR-\d{3}|IFU-(?:\d{3}|[A-Z0-9]+)|QSR-\d{3}|"
+    r"TRA-\d{3}|3P-\d{2,3})\b",
+    re.IGNORECASE,
+)
+
+
+def _extract_references(item: dict[str, object]) -> list[tuple[str, str]]:
+    text_parts = [
+        str(item.get("filename", "")),
+        str(item.get("title", "")),
+        str(item.get("source_path", "")),
+    ]
+    markdown_path = Path(str(item.get("markdown_path", "")))
+    if markdown_path.exists():
+        text_parts.append(markdown_path.read_text(encoding="utf-8", errors="replace"))
+    text = "\n".join(text_parts)
+    references: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for match in REFERENCE_RE.finditer(text):
+        target = match.group(0).upper()
+        if target in seen:
+            continue
+        seen.add(target)
+        start = max(match.start() - 80, 0)
+        end = min(match.end() + 80, len(text))
+        references.append((target, " ".join(text[start:end].split())))
+    return references

@@ -31,6 +31,7 @@ def _env_bool(name: str, default: bool) -> bool:
 class SearchConfig:
     embedding_model: str = "text-embedding-3-large"
     embedding_dimensions: int = 3072
+    embedding_batch_size: int = 128
     chat_model: str = "gpt-5.5"
     agent_model: str = "gpt-5.5"
     enrichment_model: str = "gpt-5.5"
@@ -60,6 +61,8 @@ class SearchConfig:
     corpus_zip: Path = Path("Example_QMS_-_MedAI.zip")
     index_dir: Path = Path(".data/qms-index")
     openai_vector_store_state: Path = Path(".data/openai/vector_store_state.json")
+    use_hash_embeddings: bool = False
+    runtime_env: str = "development"
 
     @classmethod
     def from_env(cls) -> "SearchConfig":
@@ -67,6 +70,9 @@ class SearchConfig:
             embedding_model=_env("EMBEDDING_MODEL", cls.embedding_model),
             embedding_dimensions=_env_int(
                 "EMBEDDING_DIMENSIONS", cls.embedding_dimensions
+            ),
+            embedding_batch_size=_env_int(
+                "EMBEDDING_BATCH_SIZE", cls.embedding_batch_size
             ),
             chat_model=_env("CHAT_MODEL", cls.chat_model),
             agent_model=_env("AGENT_MODEL", cls.agent_model),
@@ -127,13 +133,23 @@ class SearchConfig:
                     str(cls.openai_vector_store_state),
                 )
             ),
+            use_hash_embeddings=_env_bool(
+                "QMS_USE_HASH_EMBEDDINGS", cls.use_hash_embeddings
+            ),
+            runtime_env=_env("QMS_RUNTIME_ENV", cls.runtime_env).lower(),
         )
         config.validate()
         return config
 
     def validate(self) -> None:
+        if self.runtime_env not in {"development", "test", "production"}:
+            raise ValueError("QMS_RUNTIME_ENV must be development, test, or production")
+        if self.runtime_env == "production" and self.use_hash_embeddings:
+            raise ValueError("QMS_USE_HASH_EMBEDDINGS cannot be true in production")
         if self.embedding_dimensions <= 0:
             raise ValueError("EMBEDDING_DIMENSIONS must be positive")
+        if self.embedding_batch_size <= 0:
+            raise ValueError("EMBEDDING_BATCH_SIZE must be positive")
         if self.vector_index != "faiss":
             raise ValueError("VECTOR_INDEX must be 'faiss' for this implementation")
         if self.faiss_index_type != "IndexFlatIP":
@@ -180,6 +196,7 @@ class SearchConfig:
         return {
             "embedding_model": self.embedding_model,
             "embedding_dimensions": self.embedding_dimensions,
+            "embedding_batch_size": self.embedding_batch_size,
             "vector_index": self.vector_index,
             "faiss_index_type": self.faiss_index_type,
             "chunk_size_tokens": self.chunk_size_tokens,
@@ -206,6 +223,8 @@ class SearchConfig:
             "reranker_top_n_candidates": self.reranker_top_n_candidates,
             "reranker_top_k": self.reranker_top_k,
             "reranker_max_length": self.reranker_max_length,
+            "use_hash_embeddings": self.use_hash_embeddings,
+            "runtime_env": self.runtime_env,
         }
 
     def as_dict(self) -> dict[str, object]:

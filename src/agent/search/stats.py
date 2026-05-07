@@ -4,6 +4,7 @@ from pathlib import Path
 
 from agent.config import SearchConfig
 from agent.search.faiss_store import LocalVectorIndex
+from agent.search.rerank import LocalReranker
 from agent.search.sqlite_store import SearchStore
 
 
@@ -14,6 +15,21 @@ def collect_stats(config: SearchConfig) -> dict[str, object]:
     hosted = {"exists": hosted_state.exists(), "state_path": str(hosted_state)}
     if hosted_state.exists():
         hosted["bytes"] = hosted_state.stat().st_size
+        try:
+            import json
+
+            state = json.loads(hosted_state.read_text(encoding="utf-8"))
+            hosted.update(
+                {
+                    "status": state.get("status"),
+                    "vector_store_id": state.get("vector_store_id"),
+                    "corpus_hash": state.get("corpus_hash"),
+                    "file_count": state.get("file_count", len(state.get("files", []))),
+                    "updated_at": state.get("updated_at"),
+                }
+            )
+        except Exception:
+            hosted["status"] = "unreadable"
     return {
         "model_config": config.model_config(),
         "paths": {
@@ -26,4 +42,5 @@ def collect_stats(config: SearchConfig) -> dict[str, object]:
         "sqlite": store.stats(),
         "vector_index": vector_index.stats(),
         "hosted_file_search": hosted,
+        "reranker": LocalReranker(config).status(),
     }

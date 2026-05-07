@@ -5,6 +5,7 @@ def test_config_defaults_to_quality_baseline():
     config = SearchConfig()
     assert config.embedding_model == "text-embedding-3-large"
     assert config.embedding_dimensions == 3072
+    assert config.embedding_batch_size == 128
     assert config.chat_model == "gpt-5.5"
     assert config.agent_model == "gpt-5.5"
     assert config.enrichment_model == "gpt-5.5"
@@ -22,6 +23,8 @@ def test_config_defaults_to_quality_baseline():
     assert config.answer_context_neighbor_chunks == 1
     assert config.reranker_enabled is True
     assert config.reranker_model == "Qwen/Qwen3-Reranker-4B"
+    assert config.use_hash_embeddings is False
+    assert config.runtime_env == "development"
 
 
 def test_config_validates_reranker_top_k():
@@ -32,3 +35,13 @@ def test_config_validates_reranker_top_k():
         assert "RERANKER_TOP_K" in str(exc)
     else:
         raise AssertionError("expected invalid reranker config to fail")
+
+
+def test_production_config_rejects_hash_embeddings():
+    config = SearchConfig(runtime_env="production", use_hash_embeddings=True)
+    try:
+        config.validate()
+    except ValueError as exc:
+        assert "QMS_USE_HASH_EMBEDDINGS" in str(exc)
+    else:
+        raise AssertionError("expected production hash config to fail")

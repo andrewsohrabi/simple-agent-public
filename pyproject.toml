@@ -24,6 +24,7 @@ ingest-qms = "agent.search.cli:ingest_main"
 build-qms-index = "agent.search.cli:build_index_main"
 search-status = "agent.search.cli:status_main"
 search-evals = "evals.run_search_evals:main"
+sync-openai-file-search = "agent.search.cli:sync_openai_file_search_main"
 
 [dependency-groups]
 dev = [

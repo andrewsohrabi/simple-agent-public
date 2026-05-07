@@ -79,8 +79,8 @@ simple-agent/
 ## Andrew's Notes: MedAI QMS Internal Search
 
 This branch turns the starter chat agent into an internal-search demo for the
-MedAI QMS document corpus. The first baseline intentionally optimizes for
-quality before cost:
+MedAI QMS document corpus. The target production baseline intentionally
+optimizes for quality before cost:
 
 ```env
 EMBEDDING_MODEL=text-embedding-3-large
@@ -104,14 +104,15 @@ flowchart LR
     Zip["Example_QMS_-_MedAI.zip"] --> Extract["Binary DOCX extraction"]
     Extract --> Normalize["Markdown + metadata normalization"]
     Normalize --> Chunk["600-token child chunks + metadata/table chunks"]
-    Normalize --> SQLite["SQLite documents/chunks + FTS5"]
+    Normalize --> SQLite["SQLite documents/chunks/revisions/references + FTS5"]
     Chunk --> Embed["text-embedding-3-large 3072"]
     Chunk --> SQLite
     Embed --> Vector["FAISS-compatible IndexFlatIP store"]
     SQLite --> Search["Deterministic query planner"]
     Vector --> Search
-    Search --> Answer["Citation-grounded answer"]
-    Answer --> UI["React search workbench"]
+    Search --> Rerank["Deterministic rerank fallback"]
+    Rerank --> Answer["Citation-grounded answer"]
+    Answer --> UI["Desktop-first React search workbench"]
 ```
 
 Important commands:
@@ -127,20 +128,45 @@ cd frontend && npm run dev
 ```
 
 The current implementation includes deterministic ingestion, revision parsing,
-SQLite inventory/counts, FTS5 lookup, a FAISS-compatible normalized vector
-store, query planning, citation objects, `/search`, `/stats`, `/health`, a React
-workbench using the requested prompt-box component shape, and an 84-case eval
-dataset covering the seven exercise query patterns.
+SQLite inventory/counts plus revision/reference tables, FTS5 lookup, a
+FAISS-compatible normalized OpenAI vector store, synced hosted OpenAI File
+Search state, query planning, citation objects, `/search`, `/stats`, `/health`,
+a desktop-first React workbench using the requested prompt-box component shape,
+and an 84-case eval dataset covering the seven exercise query patterns.
 
-Current local review artifact status:
+Current indexed baseline:
 
 - `189` real DOCX records represented after ignoring Mac artifacts.
 - `24` sparse/empty-body documents retained as metadata-only records.
-- `7,778` token-aware chunks in the committed deterministic local index.
+- `7,778` token-aware chunks in the local index.
+- Local vectors are OpenAI `text-embedding-3-large` embeddings at `3072`
+  dimensions with `embedding_provider=openai`.
+- Hosted OpenAI File Search state is synced for the same corpus hash with `189`
+  uploaded normalized Markdown files.
+- SQLite includes `revisions` and `doc_references`; current status reports
+  `2,355` extracted references.
+- Reranking is enabled but currently uses the deterministic fallback backend
+  while the Qwen implementation remains a production gap.
+- The latest 84-case local OpenAI-index eval is `84 / 84` at harness threshold
+  `0`, average score `0.5639`, in `docs/eval-runs/2026-05-07-031242.md`.
+  The report is intentionally candid: citation validity is `0.3815`,
+  Recall@k is `0.4385`, and obsolete leakage needs more ranking/filter work.
 - `docs/architecture-decisions.md` records chunking, table-splitting,
   metadata-only, model-baseline, artifact, and eval trade-off decisions.
 
-The hosted OpenAI File Search sync module is scaffolded so the agent can create
-and reuse a vector store programmatically; no manual OpenAI UI setup is needed.
-The user only needs `OPENAI_API_KEY` in `.env`. Hosted vector-store state is kept
-under `.data/openai/` and is not committed.
+Remaining production baseline:
+
+- Complete real Qwen/BAAI reranking and `gpt-5.5` long-form synthesis if the
+  demo needs model-written narrative rather than deterministic extractive
+  answers.
+- Playwright MCP desktop verification completed on `2026-05-07`: the app loaded
+  at `http://127.0.0.1:3060`, an enumeration query ran through the UI, Sources
+  and Debug opened, and the browser console showed no warnings or errors. The
+  command-line Playwright suite is present, but `scripts/check.sh` skips only the
+  known Codex macOS Chromium MachPort failure after backend startup and frontend
+  build pass.
+
+The hosted OpenAI File Search sync path can create and reuse a vector store
+programmatically; no manual OpenAI UI setup is needed. The user only needs
+`OPENAI_API_KEY` in `.env`. Hosted vector-store state is kept under
+`.data/openai/` and is not committed.

@@ -120,6 +120,7 @@ export function PromptInputTextarea({
       placeholder={placeholder}
       rows={rows}
       disabled={disabled}
+      aria-label="Search prompt"
       spellCheck="true"
       autoComplete="off"
       {...props}

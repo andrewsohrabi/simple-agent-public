@@ -52,8 +52,10 @@ class LocalVectorIndex:
         self.metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
         manifest = {
             "created_at": datetime.now(UTC).isoformat(),
+            "embedding_provider": getattr(embedding_provider, "provider_name", "unknown"),
             "embedding_model": self.config.embedding_model,
             "embedding_dimensions": self.config.embedding_dimensions,
+            "embedding_batch_size": self.config.embedding_batch_size,
             "actual_embedding_dimensions": int(normalized.shape[1]),
             "vector_index": self.config.vector_index,
             "faiss_index_type": self.config.faiss_index_type,
@@ -131,3 +133,20 @@ class LocalVectorIndex:
         if manifest is None:
             return {"exists": False}
         return {"exists": True, **manifest}
+
+    def validate_production_ready(self) -> None:
+        manifest = self.manifest()
+        if manifest is None:
+            raise RuntimeError("production search requires a built local vector index")
+        provider = manifest.get("embedding_provider")
+        if provider != "openai":
+            raise RuntimeError(
+                "production search requires an OpenAI embedding index; "
+                f"current embedding_provider={provider!r}"
+            )
+        actual_dimensions = manifest.get("actual_embedding_dimensions")
+        if actual_dimensions != self.config.embedding_dimensions:
+            raise RuntimeError(
+                "production search index dimension mismatch: "
+                f"config={self.config.embedding_dimensions}, manifest={actual_dimensions}"
+            )

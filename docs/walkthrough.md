@@ -1,8 +1,7 @@
 # MedAI QMS Demo Walkthrough
 
-This is the target walkthrough for the completed search MVP. Commands marked as
-target commands may need to be adjusted by the implementation worker if final
-script names differ.
+This walkthrough reflects the current OpenAI-backed indexed baseline and calls
+out the remaining production gaps separately.
 
 ## Prerequisites
 
@@ -10,8 +9,16 @@ script names differ.
 - Corpus artifact at repo root: `Example_QMS_-_MedAI.zip`
 - Python environment synced with `uv sync`
 - OpenAI key available for `text-embedding-3-large` and `gpt-5.5`
-- Qwen reranker available locally or through the selected hosted endpoint
+- Qwen reranker available locally or through the selected hosted endpoint when
+  testing the future non-fallback rerank path
 - Node.js 18+ for the React frontend
+
+Current caveat:
+
+- The local index is now built with OpenAI `text-embedding-3-large` at 3072
+  dimensions and hosted OpenAI File Search is synced.
+- Reranking still reports `deterministic_fallback`; the real Qwen reranker path
+  remains a production gap.
 
 Check status:
 
@@ -21,21 +28,26 @@ git status --short
 uv run pytest evals/ -v
 ```
 
-## 1. Build The Index
+## 1. Build Or Verify The Current OpenAI Index
 
 ```bash
 uv run ingest-qms
-uv run build-qms-index --hash-embeddings
+uv run build-qms-index
 ```
 
 Expected output should include:
 
 - Corpus hash.
 - Document count `189`, skipped count `0`, metadata-only count `24`, and chunk
-  count `7,778` for the current deterministic local review artifact.
+  count `7,778` for the current local index.
 - Embedding model: `text-embedding-3-large`.
 - Embedding dimensions: `3072`.
+- Embedding provider: `openai`.
 - FAISS type: `IndexFlatIP`.
+- SQLite `revisions` and `doc_references`; current status reports `2,355`
+  references.
+- Hosted File Search status `synced` with `189` files for the current corpus
+  hash.
 - Chunking: 600-token child chunks, 100-token overlap, 700-token table target,
   metadata chunks enabled, and one answer-time neighbor chunk.
 - Extraction warnings.
@@ -46,10 +58,19 @@ Inspect status:
 uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
 ```
 
+Deterministic smoke build, only when live embeddings are intentionally avoided:
+
+```bash
+uv run ingest-qms
+uv run build-qms-index --hash-embeddings
+```
+
+The OpenAI build must remain the indexed baseline for production-style runs.
+
 ## 2. Smoke-Test Retrieval
 
 ```bash
-uv run search-evals --dataset evals/datasets/qms_smoke.jsonl --report docs/eval-runs --hash-embeddings --mode local
+uv run search-evals --dataset evals/datasets/qms_smoke.jsonl --report docs/eval-runs --mode local
 ```
 
 Expected behavior:
@@ -102,7 +123,8 @@ npm run dev
 Expected frontend URL: `http://localhost:3000`
 
 The first screen should be the search workbench. It should show index readiness
-and provide a chat/search entry point without requiring a separate landing page.
+and provide a desktop-first chat/search entry point without requiring a separate
+landing page.
 
 ## 5. Demo Script
 
@@ -154,3 +176,15 @@ Create `docs/eval-runs/YYYY-MM-DD-medai-qms-search.md` with:
 - Retrieval metrics.
 - Answer/citation metrics.
 - Known failures or degraded modes.
+
+## 8. Final Browser Verification
+
+Playwright MCP/browser verification was run on the desktop workbench after the
+OpenAI index, hosted/local retrieval modes, citation flow, and frontend source
+inspection workflow were in place. The MCP check loaded
+`http://127.0.0.1:3060`, ran the engineering-change-request enumeration example,
+opened Sources and Debug, and reported zero browser console warnings/errors.
+
+Command-line Playwright remains in the repo for normal environments. In this
+Codex macOS sandbox, `scripts/check.sh` skips only the documented Chromium
+MachPort permission failure after backend startup and frontend build pass.

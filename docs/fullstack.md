@@ -1,6 +1,8 @@
-# Fullstack guide
+# Fullstack Guide
 
-Run the agent as a FastAPI server with a React chat frontend. See the [core README](../README.md) for initial setup.
+Run the MedAI QMS search API as a FastAPI server with the React search
+workbench frontend. See the [core README](../README.md) for initial setup and
+`docs/production-readiness-plan.md` for remaining production gaps.
 
 ## Prerequisites
 
@@ -9,7 +11,7 @@ Run the agent as a FastAPI server with a React chat frontend. See the [core READ
 
 ## Start
 
-Run both processes in separate terminals.
+Run both processes in separate terminals for manual local review.
 
 **Terminal 1 — backend:**
 
@@ -27,45 +29,89 @@ npm install   # first time only
 npm run dev
 ```
 
-UI opens at `http://localhost:3000`.
+Vite prints the selected URL. The default UI URL is usually
+`http://localhost:3000`.
+
+For isolated Playwright/dev verification without colliding with another local
+service, use:
+
+```bash
+HOST=127.0.0.1 PORT=8017 UVICORN_RELOAD=false QMS_USE_HASH_EMBEDDINGS=true uv run serve
+```
+
+```bash
+cd frontend
+VITE_API_URL=http://127.0.0.1:8017 npm run dev -- --host 127.0.0.1 --port 3017
+```
+
+That UI runs at `http://127.0.0.1:3017`.
 
 ## API
 
 ```
-POST /chat
+POST /search
 Content-Type: application/json
 
 {
-  "messages": [
-    { "role": "user", "content": "Hello!" }
-  ]
+  "query": "Find BOM-055 Rev G",
+  "mode": "local",
+  "limit": 8
 }
 ```
 
 ```json
 {
-  "reply": "Hi! How can I help you?"
+  "answer": "I found source-backed MedAI QMS evidence...",
+  "citations": [],
+  "query_plan": {},
+  "retrieved_documents": [],
+  "warnings": []
 }
 ```
 
-The frontend sends the full conversation history on each request. The server is stateless — no session storage.
+Useful status endpoints:
+
+- `GET /health`
+- `GET /stats`
+
+`POST /chat` routes the latest user message through the same source-backed QMS
+search pipeline and returns both `reply` and the structured search payload.
 
 ## How it works
 
-`src/agent/server.py` initializes the agent once at startup using the same `make_agent()` factory from `core.py`. The React frontend (`frontend/src/App.jsx`) manages conversation state locally and posts the full message list on every send.
+`src/agent/server.py` exposes QMS search through `QmsSearchService`. The
+workbench (`frontend/src/App.jsx`) calls `/stats` for model/index status and
+`/search` for source-backed QMS retrieval.
 
 ## Relevant files
 
 ```
 src/agent/
-├── core.py       # agent factory (shared)
-└── server.py     # FastAPI app, POST /chat endpoint
+├── core.py          # generic agent factory
+├── server.py        # FastAPI app
+└── search/          # QMS ingestion, indexing, retrieval, answers, stats
 
 frontend/
 ├── src/
-│   ├── App.jsx   # chat UI component
-│   └── main.jsx  # React entry point
+│   ├── App.jsx      # search workbench
+│   └── main.jsx     # React entry point
+├── e2e/             # Playwright end-to-end tests
+├── playwright.config.js
 ├── index.html
 ├── vite.config.js
 └── package.json
 ```
+
+## Verification
+
+```bash
+UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q
+cd frontend
+npm run build
+npm run test:e2e
+```
+
+In this Codex macOS sandbox, Chromium may fail before page assertions with
+`MachPortRendezvousServer ... Permission denied`. `scripts/check.sh` treats only
+that exact browser-launch signature as a sandbox skip after backend startup and
+frontend build pass.

@@ -12,6 +12,7 @@ from agent.config import SearchConfig
 class EmbeddingProvider(Protocol):
     model: str
     dimensions: int
+    provider_name: str
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         ...
@@ -24,17 +25,22 @@ class OpenAIEmbeddingProvider:
     def __init__(self, config: SearchConfig):
         self.model = config.embedding_model
         self.dimensions = config.embedding_dimensions
+        self.batch_size = config.embedding_batch_size
+        self.provider_name = "openai"
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         from openai import OpenAI
 
         client = OpenAI()
-        response = client.embeddings.create(
-            model=self.model,
-            input=texts,
-            dimensions=self.dimensions,
-        )
-        vectors = [item.embedding for item in response.data]
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), self.batch_size):
+            batch = texts[start : start + self.batch_size]
+            response = client.embeddings.create(
+                model=self.model,
+                input=batch,
+                dimensions=self.dimensions,
+            )
+            vectors.extend(item.embedding for item in response.data)
         self._validate(vectors)
         return vectors
 
@@ -55,6 +61,7 @@ class HashEmbeddingProvider:
     def __init__(self, dimensions: int = 3072, model: str = "hash-dev"):
         self.dimensions = dimensions
         self.model = model
+        self.provider_name = "hash"
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         return [self.embed_query(text) for text in texts]

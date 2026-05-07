@@ -82,6 +82,21 @@ def test_chunk_ids_are_stable_across_repeated_indexing():
     assert [chunk.chunk_id for chunk in first] == [chunk.chunk_id for chunk in second]
 
 
+def test_chunks_include_citation_metadata():
+    chunks = chunk_text(metadata(), "# Results\nThe verification protocol passed.")
+    prose = next(chunk for chunk in chunks if chunk.kind == "prose")
+
+    assert prose.chunk_id
+    assert prose.metadata["filename"] == metadata().filename
+    assert prose.metadata["source_path"] == metadata().source_path
+    assert prose.metadata["document_code"] == metadata().doc_id
+    assert prose.metadata["parent_section_id"] == prose.parent_section_id
+    assert prose.metadata["heading_path"] == ["Results"]
+    assert prose.metadata["chunk_index"] == prose.chunk_index
+    assert prose.metadata["ordinal_start"] == prose.ordinal_start
+    assert prose.metadata["ordinal_end"] == prose.ordinal_end
+
+
 def test_metadata_only_document_is_retrievable_by_code_and_filename(tmp_path):
     doc_path = tmp_path / "IFU-MX1_rev-D.md"
     doc_path.write_text("# IFU-MX1 Rev D: MX1 Instructions for Use\n", encoding="utf-8")

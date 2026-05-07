@@ -1,11 +1,14 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+import json
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from pydantic import BaseModel
 
 from agent.config import load_config
-from agent.core import make_agent
 from agent.search.service import QmsSearchService
+from agent.search.sqlite_store import SearchStore
 from agent.search.stats import collect_stats
 
 load_dotenv()
@@ -20,10 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize agent once at startup with configured model.
-agent = make_agent(config.agent_model)
-
-
 class Message(BaseModel):
     role: str
     content: str
@@ -31,6 +30,8 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[Message]
+    mode: str = "auto"
+    limit: int = 16
 
 
 class SearchRequest(BaseModel):
@@ -39,14 +40,64 @@ class SearchRequest(BaseModel):
     limit: int = 16
 
 
+def _search_service() -> QmsSearchService:
+    return QmsSearchService(config, use_hash_embeddings=config.use_hash_embeddings)
+
+
+def _store() -> SearchStore:
+    return SearchStore(config.index_dir / "qms.sqlite")
+
+
+def _row_to_document(row) -> dict[str, object]:
+    return {
+        "doc_id": row["doc_id"],
+        "revision": row["revision"],
+        "prefix": row["prefix"],
+        "title": row["title"],
+        "revision_rank": row["revision_rank"],
+        "canonical_doc_key": row["canonical_doc_key"],
+        "is_latest": bool(row["is_latest"]),
+        "is_signed": bool(row["is_signed"]),
+        "is_obsolete": bool(row["is_obsolete"]),
+        "filename": row["filename"],
+        "source_path": row["source_path"],
+        "software_version": row["software_version"],
+        "markdown_path": row["markdown_path"],
+        "sha256": row["sha256"],
+    }
+
+
+def _row_to_chunk(row) -> dict[str, object]:
+    return {
+        "chunk_id": row["chunk_id"],
+        "doc_id": row["doc_id"],
+        "revision": row["revision"],
+        "title": row["title"],
+        "section": row["section"],
+        "ordinal": row["ordinal"],
+        "text": row["text"],
+        "parent_section_id": row["parent_section_id"],
+        "kind": row["kind"],
+        "token_count": row["token_count"],
+        "metadata": json.loads(row["metadata_json"]),
+    }
+
+
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
-        messages = [{"role": m.role, "content": m.content} for m in req.messages]
-        result = agent.invoke({"messages": messages})
-        ai_msg = result["messages"][-1]
-        return {"reply": ai_msg.content}
+        latest_user_message = next(
+            (message.content for message in reversed(req.messages) if message.role == "user"),
+            "",
+        )
+        if not latest_user_message.strip():
+            raise HTTPException(status_code=400, detail="user message is required")
+        service = _search_service()
+        result = service.search(latest_user_message, mode=req.mode, limit=req.limit)
+        return {"reply": result["answer"], **result}
     except Exception as exc:
+        if isinstance(exc, HTTPException):
+            raise exc
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -55,7 +106,7 @@ def search(req: SearchRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="query is required")
     try:
-        service = QmsSearchService(config)
+        service = _search_service()
         return service.search(req.query, mode=req.mode, limit=req.limit)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -66,15 +117,141 @@ def stats():
     return collect_stats(config)
 
 
+@app.get("/index/status")
+def index_status():
+    return collect_stats(config)
+
+
+@app.get("/status")
+def status():
+    return collect_stats(config)
+
+
 @app.get("/health")
 def health():
     return {"ok": True, "model_config": config.model_config()}
 
 
+@app.get("/documents")
+def documents(
+    q: str | None = None,
+    prefix: str | None = None,
+    latest_only: bool = False,
+    include_obsolete: bool = True,
+    limit: int = Query(default=50, ge=1, le=500),
+):
+    clauses: list[str] = []
+    values: list[object] = []
+    if q:
+        clauses.append("(lower(doc_id) LIKE ? OR lower(title) LIKE ? OR lower(filename) LIKE ?)")
+        needle = f"%{q.lower()}%"
+        values.extend([needle, needle, needle])
+    if prefix:
+        clauses.append("prefix = ?")
+        values.append(prefix.upper())
+    if latest_only:
+        clauses.append("is_latest = 1")
+    if not include_obsolete:
+        clauses.append("is_obsolete = 0")
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    try:
+        with _store().connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT *
+                FROM documents
+                {where}
+                ORDER BY doc_id, revision_rank DESC
+                LIMIT ?
+                """,
+                [*values, limit],
+            ).fetchall()
+        return {"documents": [_row_to_document(row) for row in rows]}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/documents/{doc_id}")
+def document(
+    doc_id: str,
+    revision: str | None = None,
+    include_chunks: bool = False,
+    chunk_limit: int = Query(default=25, ge=1, le=200),
+):
+    clauses = ["doc_id = ?"]
+    values: list[object] = [doc_id.upper()]
+    if revision:
+        clauses.append("revision = ?")
+        values.append(revision.upper())
+    else:
+        clauses.append("is_latest = 1")
+    try:
+        with _store().connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT *
+                FROM documents
+                WHERE {' AND '.join(clauses)}
+                ORDER BY revision_rank DESC
+                LIMIT 1
+                """,
+                values,
+            ).fetchone()
+            if row is None:
+                raise HTTPException(status_code=404, detail="document not found")
+            payload: dict[str, object] = {"document": _row_to_document(row)}
+            if include_chunks:
+                chunk_rows = conn.execute(
+                    """
+                    SELECT *
+                    FROM chunks
+                    WHERE doc_id = ? AND revision = ?
+                    ORDER BY ordinal
+                    LIMIT ?
+                    """,
+                    (row["doc_id"], row["revision"], chunk_limit),
+                ).fetchall()
+                payload["chunks"] = [_row_to_chunk(chunk_row) for chunk_row in chunk_rows]
+            return payload
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/chunks/{chunk_id}")
+def chunk(chunk_id: str):
+    try:
+        with _store().connect() as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM chunks
+                WHERE chunk_id = ?
+                """,
+                (chunk_id,),
+            ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="chunk not found")
+        return {"chunk": _row_to_chunk(row)}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 def main():
     import uvicorn
 
-    uvicorn.run("agent.server:app", host="0.0.0.0", port=8000, reload=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    reload_enabled = os.getenv("UVICORN_RELOAD", "true").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    uvicorn.run("agent.server:app", host=host, port=port, reload=reload_enabled)
 
 
 if __name__ == "__main__":

@@ -36,9 +36,10 @@ The MVP must support:
 - Enumeration and counting, with transparent caveats when counts depend on
   metadata-only documents or incomplete extraction.
 
-## Baseline Defaults
+## Target Production Baseline Defaults
 
-Use these defaults unless there is a documented blocker:
+Use these defaults for the remaining production baseline unless there is a
+documented blocker:
 
 | Concern | Baseline |
 | --- | --- |
@@ -173,6 +174,9 @@ The fullstack MVP should be a search workbench, not a marketing page:
 - Search mode controls for latest-active vs include-obsolete behavior.
 - Loading, empty, error, and partial-success states.
 - Keyboard navigable controls and accessible names for icon-only actions.
+- Desktop-first layout for the live onsite walkthrough, with mobile containment
+  kept as a regression requirement rather than the primary information density
+  target.
 
 Use the existing React/Vite app unless implementation work proves the stack is
 fighting the workflow.
@@ -254,11 +258,23 @@ cd frontend && npm run dev
   normalized vectors, and FAISS `IndexFlatIP`.
 - Chunking uses 600-token child chunks with 100-token overlap, metadata chunks,
   row-preserving table chunks, and answer-time neighbor expansion.
-- `build-qms-index --hash-embeddings` is the deterministic smoke path used for
-  local verification; `build-qms-index` uses the configured OpenAI embedding
-  provider and passes `dimensions=3072`.
-- The latest recorded 84-case eval run is in `docs/eval-runs/`. It is a baseline
-  failure report, not a finished-quality claim.
+- Current vector artifacts are the OpenAI local index:
+  `embedding_provider=openai`, `text-embedding-3-large`, 3072 dimensions,
+  normalized vectors, and `7,778` chunks.
+- SQLite includes document, chunk, source-file, ingest-run, revision, and
+  `doc_references` tables; current status reports `2,355` references.
+- Hosted OpenAI File Search state is synced for the current corpus hash with
+  `189` normalized Markdown files.
+- `build-qms-index --hash-embeddings` remains the deterministic local smoke path.
+  `build-qms-index` is the OpenAI build path and is the current indexed
+  baseline.
+- The configured Qwen reranker is not yet the active backend; status currently
+  reports `deterministic_fallback`.
+- The latest committed 84-case local hash eval is `25 / 84`, average `0.5210`,
+  in `docs/eval-runs/2026-05-07-014026.md`. It is a baseline failure report,
+  not a finished-quality claim.
+- Playwright MCP/browser verification is deferred to final verification after
+  production search behavior and the frontend production pass are complete.
 
 See `docs/architecture-decisions.md` for the running trade-off log and chunking
 decision evidence.

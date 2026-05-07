@@ -374,9 +374,9 @@ Interpretation:
   implementation work more than chunk-size tuning: SQL/list routing,
   reference-following, revision-chain diffing, table row citations, and answer
   formatting.
-- The current hash-embedding eval is a smoke/regression proxy. The highest
-  quality path still needs the OpenAI 3072-dimensional index and hosted/file
-  search comparison before making final retrieval-quality claims.
+- This hash-embedding eval is a historical smoke/regression proxy. The OpenAI
+  3072-dimensional index and hosted File Search state now exist, but they still
+  need comparative eval runs before making final retrieval-quality claims.
 
 Planned fix classes from the report:
 
@@ -387,6 +387,115 @@ Planned fix classes from the report:
 - revision chain and obsolete/signed handling
 - table/section extraction and citation precision
 - known-item exact/metadata routing
+
+## 2026-05-07 - Baseline Naming And Verification Boundary
+
+Decision:
+
+- Historical decision superseded by the later OpenAI index verification entry:
+  at the time, call the committed deterministic artifact the current local
+  hash/demo baseline.
+- At that time, reserve production baseline language for the future OpenAI
+  `text-embedding-3-large` 3072-dimensional index plus hosted retrieval,
+  reranking, citation-validated `gpt-5.5` synthesis, upgraded eval metrics, and
+  final frontend verification.
+- Defer Playwright MCP/browser verification to the final verification phase.
+
+Reasoning:
+
+- The current artifact is useful for portable review, deterministic tests, and
+  local smoke demos, but hash embeddings are not the quality baseline promised
+  by the original design.
+- Naming the two baselines separately prevents eval scores, demo readiness, and
+  production readiness from being conflated.
+- Browser verification is most valuable once the source inspector, degraded
+  status, hosted/local mode behavior, and citation flows are stable.
+
+Documentation impact:
+
+- Superseded by the OpenAI index verification entry below.
+
+## 2026-05-07 - OpenAI Index Core Eval
+
+Command:
+
+```bash
+UV_CACHE_DIR=/private/tmp/uv-cache uv run search-evals --dataset core --mode local --report docs/eval-runs --fail-under 0
+```
+
+Report:
+
+- `docs/eval-runs/2026-05-07-031242.md`
+
+Result:
+
+| Metric | Value |
+| --- | ---: |
+| Cases | 84 |
+| Average score | 0.5639 |
+| Top-k hit rate | 0.5238 |
+| Recall@k | 0.4385 |
+| Citation validity | 0.3815 |
+| Latest revision accuracy | 1.0000 |
+| Obsolete leakage rate | 0.6833 |
+
+Interpretation:
+
+- The real OpenAI 3072-dimensional local index is wired and evaluable across all
+  seven exercise categories.
+- SQL-backed latest revision behavior is strong, but citation precision,
+  obsolete filtering, and cross-document/reference recall remain the biggest
+  quality gaps.
+- The run used `--fail-under 0` so the report captures every case without
+  pretending the current quality score is a production pass threshold.
+
+## 2026-05-07 - OpenAI Index And Hosted File Search Verified
+
+Decision:
+
+- Treat the current local vector artifact as the OpenAI indexed baseline:
+  `embedding_provider=openai`, `text-embedding-3-large`, 3072 dimensions,
+  normalized `IndexFlatIP` vectors, and 7,778 chunks.
+- Treat hosted OpenAI File Search as synced for the current corpus hash with 189
+  normalized Markdown files in `.data/openai/vector_store_state.json`.
+- Treat SQLite revision/reference storage as present; current status reports
+  `revisions` and `doc_references` tables with 2,355 references.
+- Keep reranking labeled as deterministic fallback until the Qwen/BAAI backend is
+  actually active.
+- Treat Playwright MCP/browser final verification as complete for the
+  desktop-first onsite walkthrough after the UI/API pass below.
+
+Verification:
+
+```bash
+UV_CACHE_DIR=/private/tmp/uv-cache uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
+sqlite3 .data/qms-index/qms.sqlite '.tables'
+```
+
+## 2026-05-07 - Desktop Browser Verification
+
+Decision:
+
+- Use a desktop-first workbench target with a 1440px content width.
+- Keep command-line Playwright tests in the repo, but make `scripts/check.sh`
+  skip only the known Codex macOS Chromium MachPort permission failure.
+
+Verification:
+
+- Playwright MCP loaded `http://127.0.0.1:3060/?mode=local&limit=8`.
+- Ran the engineering-change-request enumeration example through the UI.
+- Opened Sources and Debug panels.
+- Browser console check reported zero warnings/errors.
+- Screenshots captured:
+  - `docs/browser-verification/medai-workbench-desktop-home.png`
+  - `docs/browser-verification/medai-workbench-desktop-enumeration.png`
+  - `docs/browser-verification/medai-workbench-desktop-sources.png`
+  - `docs/browser-verification/medai-workbench-desktop-debug.png`
+
+Documentation impact:
+
+- Replace stale hash/current and hosted/scaffold language in README, DESIGN,
+  TASKS, indexing, walkthrough, troubleshooting, and production readiness docs.
 
 ## 2026-05-07 - Parallel Prose Chunking Matrix
 

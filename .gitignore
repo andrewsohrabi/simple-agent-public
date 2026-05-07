@@ -22,6 +22,8 @@ uv.lock
 
 # Node
 node_modules/
+frontend/playwright-report/
+frontend/test-results/
 
 # Generated search artifacts. The local review index is intentionally committed
 # for portability; hosted OpenAI state and raw eval traces remain local-only.

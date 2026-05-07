@@ -29,6 +29,13 @@ class ScoreBreakdown:
     missing_terms: tuple[str, ...]
     matched_sources: tuple[str, ...]
     missing_sources: tuple[str, ...]
+    top_k_hit: bool | None = None
+    recall_at_k: float | None = None
+    count_correct: bool | None = None
+    citation_validity: float | None = None
+    latest_revision_correct: bool | None = None
+    obsolete_leakage: bool | None = None
+    invalid_citations: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -45,6 +52,13 @@ def score_case(
     answer: str,
     *,
     source_ids: list[str] | tuple[str, ...] | None = None,
+    retrieved_source_ids: list[str] | tuple[str, ...] | None = None,
+    citations: list[dict[str, Any]] | tuple[dict[str, Any], ...] | None = None,
+    expected_count: int | None = None,
+    reported_count: int | None = None,
+    latest_revision: str | None = None,
+    retrieved_documents: list[dict[str, Any]] | tuple[dict[str, Any], ...] | None = None,
+    k: int = 5,
     pass_threshold: float = PASS_THRESHOLD,
 ) -> ScoreBreakdown:
     """Score one answer using exact, deterministic evidence checks."""
@@ -70,6 +84,45 @@ def score_case(
         source for source in case.expected.source_ids if source not in matched_sources
     )
     source_score = _ratio(len(matched_sources), len(case.expected.source_ids))
+    ranked_sources = tuple(retrieved_source_ids or provided_sources)
+    top_k_sources = ranked_sources[:k]
+    top_k_hit = (
+        any(_source_present(expected, top_k_sources) for expected in case.expected.source_ids)
+        if ranked_sources
+        else None
+    )
+    recall_at_k = (
+        _ratio(
+            sum(
+                1
+                for expected in case.expected.source_ids
+                if _source_present(expected, top_k_sources)
+            ),
+            len(case.expected.source_ids),
+        )
+        if ranked_sources
+        else None
+    )
+
+    count_correct = None
+    if case.category == "enumeration_counting" and expected_count is not None:
+        observed_count = reported_count if reported_count is not None else _extract_count(answer)
+        count_correct = observed_count == expected_count
+
+    citation_validity, invalid_citations = _score_citation_validity(
+        citations, case.expected.source_ids
+    )
+    latest_revision_correct = _score_latest_revision(
+        case,
+        answer,
+        latest_revision=latest_revision,
+    )
+    obsolete_leakage = _score_obsolete_leakage(
+        case,
+        answer,
+        source_ids=provided_sources,
+        retrieved_documents=retrieved_documents,
+    )
 
     total_score = round((TERM_WEIGHT * term_score) + (SOURCE_WEIGHT * source_score), 4)
     return ScoreBreakdown(
@@ -83,6 +136,13 @@ def score_case(
         missing_terms=missing_terms,
         matched_sources=matched_sources,
         missing_sources=missing_sources,
+        top_k_hit=top_k_hit,
+        recall_at_k=recall_at_k,
+        count_correct=count_correct,
+        citation_validity=citation_validity,
+        latest_revision_correct=latest_revision_correct,
+        obsolete_leakage=obsolete_leakage,
+        invalid_citations=invalid_citations,
     )
 
 
@@ -99,12 +159,32 @@ def aggregate_scores(scores: list[ScoreBreakdown]) -> dict[str, Any]:
         "average_score": _average(score.total_score for score in scores),
         "average_term_score": _average(score.term_score for score in scores),
         "average_source_score": _average(score.source_score for score in scores),
+        "top_k_hit_rate": _average_bool(score.top_k_hit for score in scores),
+        "average_recall_at_k": _average_optional(score.recall_at_k for score in scores),
+        "count_accuracy": _average_bool(score.count_correct for score in scores),
+        "average_citation_validity": _average_optional(
+            score.citation_validity for score in scores
+        ),
+        "latest_revision_accuracy": _average_bool(
+            score.latest_revision_correct for score in scores
+        ),
+        "obsolete_leakage_rate": _average_bool(score.obsolete_leakage for score in scores),
         "by_category": {
             category: {
                 "total": len(category_scores),
                 "passed": sum(1 for score in category_scores if score.passed),
+                "pass_rate": _ratio(
+                    sum(1 for score in category_scores if score.passed),
+                    len(category_scores),
+                ),
                 "average_score": _average(
                     score.total_score for score in category_scores
+                ),
+                "top_k_hit_rate": _average_bool(
+                    score.top_k_hit for score in category_scores
+                ),
+                "average_recall_at_k": _average_optional(
+                    score.recall_at_k for score in category_scores
                 ),
             }
             for category, category_scores in sorted(by_category.items())
@@ -131,25 +211,40 @@ def render_markdown_report(
         f"- Retrieval mode: {run_context.get('retrieval_mode', 'unknown')}",
         f"- Corpus SHA-256: {run_context.get('corpus_hash', 'unknown')}",
         f"- Index manifest: {run_context.get('index_manifest', 'unknown')}",
+        f"- Index manifest SHA-256: {run_context.get('index_manifest_hash', 'unknown')}",
         f"- Embedding model: {run_context.get('embedding_model', 'unknown')}",
         f"- Embedding dimensions: {run_context.get('embedding_dimensions', 'unknown')}",
         f"- Vector index: {run_context.get('vector_index', 'unknown')}",
         f"- FAISS type: {run_context.get('faiss_index_type', 'unknown')}",
         f"- Chat model: {run_context.get('chat_model', 'unknown')}",
         f"- Reranker: {run_context.get('reranker_model', 'unknown')}",
+        f"- Model config: {_format_model_config(run_context)}",
         f"- Cases: {aggregate['total']}",
         f"- Passed: {aggregate['passed']}",
         f"- Average score: {aggregate['average_score']:.4f}",
         f"- Pass threshold: {pass_threshold:.2f}",
         "",
+        "## Retrieval And Answer Metrics",
+        "",
+        "| Metric | Value |",
+        "| --- | ---: |",
+        f"| Top-k hit rate | {_format_optional_metric(aggregate['top_k_hit_rate'])} |",
+        f"| Recall@k | {_format_optional_metric(aggregate['average_recall_at_k'])} |",
+        f"| Count accuracy | {_format_optional_metric(aggregate['count_accuracy'])} |",
+        f"| Citation validity | {_format_optional_metric(aggregate['average_citation_validity'])} |",
+        f"| Latest revision accuracy | {_format_optional_metric(aggregate['latest_revision_accuracy'])} |",
+        f"| Obsolete leakage rate | {_format_optional_metric(aggregate['obsolete_leakage_rate'])} |",
+        "",
         "## By Category",
         "",
-        "| Category | Cases | Passed | Avg Score |",
-        "| --- | ---: | ---: | ---: |",
+        "| Category | Cases | Passed | Pass Rate | Avg Score | Top-k Hit | Recall@k |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for category, summary in aggregate["by_category"].items():
         lines.append(
-            f"| {category} | {summary['total']} | {summary['passed']} | {summary['average_score']:.4f} |"
+            f"| {category} | {summary['total']} | {summary['passed']} | {summary['pass_rate']:.4f} | "
+            f"{summary['average_score']:.4f} | {_format_optional_metric(summary['top_k_hit_rate'])} | "
+            f"{_format_optional_metric(summary['average_recall_at_k'])} |"
         )
 
     failures = [score for score in scores if not score.passed]
@@ -159,7 +254,12 @@ def render_markdown_report(
             lines.append(
                 f"- `{score.id}` ({score.category}) score={score.total_score:.4f}; "
                 f"missing_terms={list(score.missing_terms)}; "
-                f"missing_sources={list(score.missing_sources)}"
+                f"missing_sources={list(score.missing_sources)}; "
+                f"top_k_hit={score.top_k_hit}; recall_at_k={score.recall_at_k}; "
+                f"count_correct={score.count_correct}; "
+                f"latest_revision_correct={score.latest_revision_correct}; "
+                f"obsolete_leakage={score.obsolete_leakage}; "
+                f"invalid_citations={list(score.invalid_citations)}"
             )
 
     if failures:
@@ -254,8 +354,156 @@ def _source_present(expected: str, provided_sources: tuple[str, ...]) -> bool:
     return False
 
 
+def _score_citation_validity(
+    citations: list[dict[str, Any]] | tuple[dict[str, Any], ...] | None,
+    expected_sources: tuple[str, ...],
+) -> tuple[float | None, tuple[str, ...]]:
+    if citations is None:
+        return None, ()
+    if not citations:
+        return 0.0, ()
+
+    invalid: list[str] = []
+    valid_count = 0
+    for index, citation in enumerate(citations, start=1):
+        source = _citation_source_id(citation)
+        if not source:
+            invalid.append(f"citation_{index}:missing_source")
+            continue
+        if _source_present(source, expected_sources) or _source_present_any(
+            expected_sources, (source,)
+        ):
+            valid_count += 1
+        else:
+            invalid.append(source)
+    return _ratio(valid_count, len(citations)), tuple(invalid)
+
+
+def _citation_source_id(citation: dict[str, Any]) -> str:
+    for key in ("doc_id", "source_id", "id"):
+        value = citation.get(key)
+        if isinstance(value, str) and value.strip():
+            revision = citation.get("revision")
+            if isinstance(revision, str) and revision.strip():
+                return f"{value} Rev {revision}"
+            return value
+    return ""
+
+
+def _source_present_any(expected_sources: tuple[str, ...], provided: tuple[str, ...]) -> bool:
+    return any(_source_present(expected, provided) for expected in expected_sources)
+
+
+def _score_latest_revision(
+    case: QmsEvalCase,
+    answer: str,
+    *,
+    latest_revision: str | None,
+) -> bool | None:
+    if case.dimensions.get("revision_scope") not in {"latest", "all_revisions"}:
+        return None
+    expected_revision = _expected_revision(case)
+    if not expected_revision:
+        return None
+    observed = latest_revision or _first_revision(answer)
+    if not observed:
+        return False
+    return normalize_text(expected_revision) == normalize_text(observed)
+
+
+def _expected_revision(case: QmsEvalCase) -> str | None:
+    for term in case.expected.must_include:
+        revision = _first_revision(term)
+        if revision:
+            return revision
+    return None
+
+
+def _first_revision(value: str) -> str | None:
+    match = re.search(r"\bRev(?:ision)?\s+([A-Z0-9]+)\b", value, re.IGNORECASE)
+    if not match:
+        return None
+    return f"Rev {match.group(1).upper()}"
+
+
+def _score_obsolete_leakage(
+    case: QmsEvalCase,
+    answer: str,
+    *,
+    source_ids: tuple[str, ...],
+    retrieved_documents: list[dict[str, Any]] | tuple[dict[str, Any], ...] | None,
+) -> bool | None:
+    revision_scope = case.dimensions.get("revision_scope")
+    expects_obsolete = revision_scope == "obsolete_explicit" or any(
+        "obsolete" in normalize_text(term) for term in case.expected.must_include
+    )
+    if expects_obsolete:
+        return None
+    if revision_scope not in {"latest", "all", "all_revisions"}:
+        return None
+    if "obsolete" in normalize_text(answer):
+        return True
+    if any("obsolete" in normalize_text(source) for source in source_ids):
+        return True
+    for document in retrieved_documents or ():
+        metadata = document.get("metadata")
+        if isinstance(metadata, dict) and metadata.get("is_obsolete") is True:
+            return True
+        title = document.get("title")
+        if isinstance(title, str) and "obsolete" in normalize_text(title):
+            return True
+    return False
+
+
+def _extract_count(answer: str) -> int | None:
+    match = re.search(r"\b(?:count\s*:\s*)?(\d+)\b", answer, re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
 def _average(values: Any) -> float:
     collected = list(values)
     if not collected:
         return 0.0
     return round(sum(collected) / len(collected), 4)
+
+
+def _average_optional(values: Any) -> float | None:
+    collected = [value for value in values if value is not None]
+    if not collected:
+        return None
+    return round(sum(collected) / len(collected), 4)
+
+
+def _average_bool(values: Any) -> float | None:
+    collected = [value for value in values if value is not None]
+    if not collected:
+        return None
+    return round(sum(1 for value in collected if value) / len(collected), 4)
+
+
+def _format_optional_metric(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.4f}"
+
+
+def _format_model_config(run_context: dict[str, Any]) -> str:
+    model_config = run_context.get("model_config")
+    if isinstance(model_config, dict) and model_config:
+        return ", ".join(
+            f"{key}={value}" for key, value in sorted(model_config.items())
+        )
+
+    fallback = {
+        "agent_model": run_context.get("agent_model"),
+        "chat_model": run_context.get("chat_model"),
+        "embedding_model": run_context.get("embedding_model"),
+        "query_model": run_context.get("query_model"),
+        "reranker_model": run_context.get("reranker_model"),
+    }
+    fallback = {
+        key: value
+        for key, value in fallback.items()
+        if value not in (None, "", "unknown")
+    }
+    if not fallback:
+        return "unknown"
+    return ", ".join(f"{key}={value}" for key, value in sorted(fallback.items()))

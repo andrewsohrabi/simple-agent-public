@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -96,6 +97,12 @@ def main() -> int:
             case,
             answers.get(case.id, {}).get("answer", ""),
             source_ids=answers.get(case.id, {}).get("source_ids", []),
+            retrieved_source_ids=answers.get(case.id, {}).get("retrieved_source_ids", []),
+            citations=answers.get(case.id, {}).get("citations"),
+            expected_count=answers.get(case.id, {}).get("expected_count"),
+            reported_count=answers.get(case.id, {}).get("reported_count"),
+            latest_revision=answers.get(case.id, {}).get("latest_revision"),
+            retrieved_documents=answers.get(case.id, {}).get("retrieved_documents"),
             pass_threshold=args.fail_under,
         )
         for case in cases
@@ -150,7 +157,44 @@ def load_answers(path: Path) -> dict[str, dict[str, Any]]:
                 isinstance(source, str) for source in source_ids
             ):
                 raise ValueError(f"{path}:{line_number}: source_ids must be list[str]")
-            answers[answer_id] = {"answer": answer, "source_ids": source_ids}
+            retrieved_source_ids = record.get("retrieved_source_ids", [])
+            if not isinstance(retrieved_source_ids, list) or not all(
+                isinstance(source, str) for source in retrieved_source_ids
+            ):
+                raise ValueError(
+                    f"{path}:{line_number}: retrieved_source_ids must be list[str]"
+                )
+            citations = record.get("citations")
+            if citations is not None and not (
+                isinstance(citations, list)
+                and all(isinstance(citation, dict) for citation in citations)
+            ):
+                raise ValueError(f"{path}:{line_number}: citations must be list[object]")
+            expected_count = _optional_int(record, "expected_count", path, line_number)
+            reported_count = _optional_int(record, "reported_count", path, line_number)
+            latest_revision = record.get("latest_revision")
+            if latest_revision is not None and not isinstance(latest_revision, str):
+                raise ValueError(
+                    f"{path}:{line_number}: latest_revision must be a string"
+                )
+            retrieved_documents = record.get("retrieved_documents")
+            if retrieved_documents is not None and not (
+                isinstance(retrieved_documents, list)
+                and all(isinstance(document, dict) for document in retrieved_documents)
+            ):
+                raise ValueError(
+                    f"{path}:{line_number}: retrieved_documents must be list[object]"
+                )
+            answers[answer_id] = {
+                "answer": answer,
+                "source_ids": source_ids,
+                "retrieved_source_ids": retrieved_source_ids,
+                "citations": citations,
+                "expected_count": expected_count,
+                "reported_count": reported_count,
+                "latest_revision": latest_revision,
+                "retrieved_documents": retrieved_documents,
+            }
     return answers
 
 
@@ -171,9 +215,22 @@ def run_search_answers(cases: list[Any], *, mode: str, use_hash_embeddings: bool
             for citation in citations:
                 if isinstance(citation, dict):
                     source_ids.append(str(citation.get("doc_id", "")))
+        retrieved_documents = result.get("retrieved_documents", [])
+        if not isinstance(retrieved_documents, list):
+            retrieved_documents = []
+        retrieved_source_ids = [
+            _document_source_id(document)
+            for document in retrieved_documents
+            if isinstance(document, dict)
+        ]
         answers[case.id] = {
             "answer": str(result.get("answer", "")),
             "source_ids": source_ids,
+            "retrieved_source_ids": [source for source in retrieved_source_ids if source],
+            "citations": citations if isinstance(citations, list) else [],
+            "reported_count": _extract_count(str(result.get("answer", ""))),
+            "latest_revision": _latest_revision_from_documents(retrieved_documents),
+            "retrieved_documents": retrieved_documents,
         }
     return answers
 
@@ -189,6 +246,17 @@ def build_run_context(*, mode: str) -> dict[str, Any]:
     config = load_config()
     index_manifest = LocalVectorIndex(config.index_dir, config).manifest() or {}
     ingest_manifest = load_ingest_manifest(config.index_dir) or {}
+    index_manifest_path = config.index_dir / "manifest.json"
+    model_config = {
+        "agent_model": config.agent_model,
+        "chat_model": config.chat_model,
+        "embedding_dimensions": config.embedding_dimensions,
+        "embedding_model": config.embedding_model,
+        "query_model": config.query_model,
+        "reranker_model": (
+            config.reranker_model if config.reranker_enabled else "disabled"
+        ),
+    }
     return {
         "timestamp": "unknown",
         "git_commit": _git_commit(),
@@ -196,7 +264,9 @@ def build_run_context(*, mode: str) -> dict[str, Any]:
         "corpus_hash": ingest_manifest.get("source_sha256")
         or index_manifest.get("corpus_hash")
         or "unknown",
-        "index_manifest": str(config.index_dir / "manifest.json"),
+        "index_manifest": str(index_manifest_path),
+        "index_manifest_hash": _sha256_file(index_manifest_path),
+        "model_config": model_config,
         "embedding_model": config.embedding_model,
         "embedding_dimensions": config.embedding_dimensions,
         "vector_index": config.vector_index,
@@ -214,12 +284,65 @@ def build_run_context(*, mode: str) -> dict[str, Any]:
 def _git_commit() -> str:
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
+            ["git", "rev-parse", "HEAD"],
             text=True,
             stderr=subprocess.DEVNULL,
         ).strip()
     except Exception:
         return "unknown"
+
+
+def _sha256_file(path: Path) -> str:
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except OSError:
+        return "unknown"
+
+
+def _optional_int(
+    record: dict[str, Any], key: str, path: Path, line_number: int
+) -> int | None:
+    value = record.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, int):
+        raise ValueError(f"{path}:{line_number}: {key} must be an integer")
+    return value
+
+
+def _document_source_id(document: dict[str, Any]) -> str:
+    doc_id = document.get("doc_id")
+    if not isinstance(doc_id, str) or not doc_id:
+        return ""
+    revision = document.get("revision")
+    if isinstance(revision, str) and revision.strip():
+        return f"{doc_id} Rev {revision}"
+    return doc_id
+
+
+def _latest_revision_from_documents(documents: list[Any]) -> str | None:
+    latest_revisions: list[str] = []
+    for document in documents:
+        if not isinstance(document, dict):
+            continue
+        metadata = document.get("metadata")
+        if not (isinstance(metadata, dict) and metadata.get("is_latest") is True):
+            continue
+        revision = document.get("revision")
+        if isinstance(revision, str) and revision.strip():
+            latest_revisions.append(f"Rev {revision}")
+    return latest_revisions[0] if latest_revisions else None
+
+
+def _extract_count(answer: str) -> int | None:
+    import re
+
+    match = re.search(r"\b(?:count\s*:\s*)?(\d+)\b", answer, re.IGNORECASE)
+    return int(match.group(1)) if match else None
 
 
 if __name__ == "__main__":

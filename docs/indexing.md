@@ -72,7 +72,7 @@ converter supplies stable page spans.
 
 ## Embeddings
 
-Baseline:
+Target production baseline:
 
 - Model: `text-embedding-3-large`
 - Dimensions: `3072`
@@ -85,6 +85,19 @@ Build rules:
 - Store vector count and dimension in the manifest.
 - Fail fast when loading an index whose stored dimension is not `3072`.
 - Batch embedding requests and retry transient provider errors with backoff.
+
+Current indexed baseline:
+
+- The current local index uses OpenAI `text-embedding-3-large` embeddings at
+  3072 dimensions, records `embedding_provider=openai`, and stores normalized
+  vectors in the FAISS-compatible `IndexFlatIP` artifact.
+- The deterministic hash path remains available through
+  `build-qms-index --hash-embeddings` for smoke tests and offline regression
+  work only.
+- Hosted OpenAI File Search is synced for the same corpus hash and stores local
+  state under `.data/openai/vector_store_state.json`.
+- Query and document embeddings must continue to use the same
+  provider/model/dimensions.
 
 ## Lexical Index
 
@@ -140,6 +153,10 @@ Persist `manifest.json` next to the index files. Required fields:
 The app should display manifest data in `GET /index/status` and the frontend
 status panel.
 
+Current SQLite status also includes first-class `revisions` and
+`doc_references` tables. The latest verified status reports 189 documents,
+7,778 chunks, 154 latest documents, 2,355 references, and a current schema.
+
 ## Validation
 
 Minimum deterministic checks:
@@ -159,3 +176,11 @@ Minimum live checks:
 - Cross-reference query returns at least two relevant document families.
 - Revision query differentiates active and obsolete evidence.
 - Counting query explains its counting basis.
+
+Final verification note:
+
+- Playwright MCP/browser verification has been run against the desktop
+  workbench after production indexing and source-inspection behavior landed.
+  Command-line Playwright remains a useful regression check, with the documented
+  Codex macOS MachPort browser-launch failure treated as a sandbox-only skip by
+  `scripts/check.sh`.

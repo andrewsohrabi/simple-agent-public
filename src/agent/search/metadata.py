@@ -23,6 +23,7 @@ DOC_ID_RE = re.compile(
 )
 REV_SUFFIX_RE = re.compile(r"(?:^|[_\-\s])([A-Z])(?:$|[_\-\s])")
 SOFTWARE_VERSION_RE = re.compile(r"\bv\d+(?:\.\d+){1,3}\b", re.IGNORECASE)
+PROJECT_CODE_RE = re.compile(r"\b(P\d{2})(?:-[A-Z0-9]+)?\b", re.IGNORECASE)
 
 
 def revision_rank(revision: str) -> int:
@@ -33,6 +34,19 @@ def revision_rank(revision: str) -> int:
         if "A" <= char <= "Z":
             rank = rank * 26 + (ord(char) - ord("A") + 1)
     return rank
+
+
+def document_family(doc_id: str) -> str:
+    return doc_id.split("-", 1)[0].upper()
+
+
+def project_code_from_filename(filename: str, doc_id: str | None = None) -> str | None:
+    if doc_id:
+        match = PROJECT_CODE_RE.search(doc_id)
+        if match:
+            return match.group(1).upper()
+    match = PROJECT_CODE_RE.search(Path(filename).stem)
+    return match.group(1).upper() if match else None
 
 
 def _parse_revision(stem: str) -> str:
@@ -57,7 +71,7 @@ def parse_document_metadata(filename: str, source_path: str | None = None) -> Do
         doc_id = match.group(1).replace("--", "-").upper()
     else:
         doc_id = re.sub(r"[^A-Za-z0-9]+", "-", stem).strip("-").upper()
-    prefix = doc_id.split("-", 1)[0]
+    prefix = document_family(doc_id)
     revision = _parse_revision(stem)
     lower = stem.lower()
     is_signed = "signed" in lower

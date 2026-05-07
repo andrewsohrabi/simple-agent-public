@@ -9,7 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from agent.search.docx_extract import extract_docx
-from agent.search.metadata import mark_latest, parse_document_metadata
+from agent.search.metadata import (
+    document_family,
+    mark_latest,
+    parse_document_metadata,
+    project_code_from_filename,
+)
 from agent.search.schema import NormalizedDocument
 
 
@@ -19,6 +24,7 @@ def _safe_name(value: str) -> str:
 
 def _markdown_for_doc(doc: NormalizedDocument) -> str:
     metadata = doc.metadata
+    project_code = project_code_from_filename(metadata.filename, metadata.doc_id) or "unknown"
     lines = [
         f"# {metadata.doc_id} Rev {metadata.revision}: {metadata.title}",
         "",
@@ -26,12 +32,16 @@ def _markdown_for_doc(doc: NormalizedDocument) -> str:
         f"- Document ID: {metadata.doc_id}",
         f"- Revision: {metadata.revision}",
         f"- Prefix: {metadata.prefix}",
+        f"- Family: {document_family(metadata.doc_id)}",
+        f"- Project code: {project_code}",
         f"- Latest revision: {metadata.is_latest}",
+        f"- Latest non-obsolete: {metadata.is_latest and not metadata.is_obsolete}",
         f"- Signed: {metadata.is_signed}",
         f"- Obsolete: {metadata.is_obsolete}",
         f"- Software version: {metadata.software_version or 'unknown'}",
         f"- Source filename: {metadata.filename}",
         f"- Source path: {metadata.source_path}",
+        f"- Source hash: {doc.sha256}",
         f"- Extraction warnings: {', '.join(doc.warnings) if doc.warnings else 'none'}",
         "",
         "## Extracted Content",
@@ -120,6 +130,14 @@ def ingest_corpus(zip_path: Path, output_dir: Path) -> dict[str, object]:
         "documents": [
             {
                 **doc.metadata.__dict__,
+                "family": document_family(doc.metadata.doc_id),
+                "project_code": project_code_from_filename(
+                    doc.metadata.filename, doc.metadata.doc_id
+                ),
+                "source_filename": doc.metadata.filename,
+                "source_hash": doc.sha256,
+                "latest_non_obsolete": doc.metadata.is_latest
+                and not doc.metadata.is_obsolete,
                 "sha256": doc.sha256,
                 "markdown_path": str(doc.markdown_path),
                 "warnings": doc.warnings,

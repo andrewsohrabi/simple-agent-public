@@ -26,6 +26,67 @@ def citations_for_hits(store: SearchStore, hits: list[SearchHit]) -> list[Citati
 def validate_citations(store: SearchStore, citations: list[Citation]) -> list[str]:
     errors: list[str] = []
     for citation in citations:
-        if citation.chunk_id and store.citation_for_chunk(citation.chunk_id) is None:
-            errors.append(f"Unknown citation chunk_id {citation.chunk_id}")
+        if not citation.doc_id:
+            errors.append("Citation is missing doc_id")
+        if not citation.revision:
+            errors.append(f"Citation for {citation.doc_id or 'unknown'} is missing revision")
+        if not citation.section:
+            errors.append(
+                f"Citation for {citation.doc_id or 'unknown'} Rev {citation.revision or 'unknown'} is missing section"
+            )
+        if citation.chunk_id:
+            stored = store.citation_for_chunk(citation.chunk_id)
+            if stored is None:
+                errors.append(f"Unknown citation chunk_id {citation.chunk_id}")
+                continue
+            if (
+                stored.doc_id != citation.doc_id
+                or stored.revision != citation.revision
+                or stored.section != citation.section
+            ):
+                errors.append(
+                    "Citation chunk metadata mismatch "
+                    f"{citation.chunk_id}: expected {stored.doc_id} Rev {stored.revision} "
+                    f"{stored.section}, got {citation.doc_id} Rev {citation.revision} {citation.section}"
+                )
+        elif not _document_exists(store, citation.doc_id, citation.revision):
+            errors.append(
+                f"Unknown citation document {citation.doc_id} Rev {citation.revision}"
+            )
     return errors
+
+
+def validate_citation_rows(store: SearchStore, citations: list[dict[str, object]]) -> list[str]:
+    rows: list[Citation] = []
+    for citation in citations:
+        rows.append(
+            Citation(
+                doc_id=str(citation.get("doc_id") or ""),
+                revision=str(citation.get("revision") or ""),
+                title=str(citation.get("title") or ""),
+                section=str(citation.get("section") or ""),
+                filename=str(citation.get("filename") or ""),
+                markdown_path=(
+                    str(citation.get("markdown_path"))
+                    if citation.get("markdown_path") is not None
+                    else None
+                ),
+                chunk_id=(
+                    str(citation.get("chunk_id"))
+                    if citation.get("chunk_id") is not None
+                    else None
+                ),
+            )
+        )
+    return validate_citations(store, rows)
+
+
+def _document_exists(store: SearchStore, doc_id: str, revision: str) -> bool:
+    if not doc_id or not revision:
+        return False
+    with store.connect() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM documents WHERE doc_id = ? AND revision = ?",
+            (doc_id.upper(), revision.upper()),
+        ).fetchone()
+    return row is not None

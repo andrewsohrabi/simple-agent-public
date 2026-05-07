@@ -13,6 +13,22 @@ git diff --stat
 uv run pytest evals/ -v
 ```
 
+Scripted checks:
+
+```bash
+scripts/status.sh
+scripts/check.sh
+scripts/dev.sh
+scripts/review_app.sh
+```
+
+`scripts/dev.sh` starts the backend and frontend together. If `.env` has no
+`OPENAI_API_KEY`, it reports that OpenAI-backed paths are unavailable and enables
+the local hash fallback for development. `scripts/review_app.sh` expects the
+backend and frontend to already be running and reports missing index artifacts,
+missing hosted OpenAI state, backend/frontend downtime, and local fallback
+conditions.
+
 For frontend work:
 
 ```bash
@@ -20,6 +36,30 @@ cd frontend
 npm install
 npm run build
 ```
+
+## Baseline Confusion
+
+Symptoms:
+
+- A report describes the committed index as if it were the final OpenAI
+  embedding build.
+- Production readiness is inferred from the deterministic local hash eval.
+- Playwright MCP/browser checks fail from command-line Chromium before page
+  assertions run.
+
+Fix:
+
+- Treat the current index artifacts as the OpenAI indexed baseline: `189` DOCX
+  records, `24` metadata-only records, `7,778` chunks,
+  `embedding_provider=openai`, synced hosted OpenAI File Search state, and
+  SQLite revision/reference tables.
+- Treat the current demo as OpenAI-indexed, hosted-synced, SQLite-backed, and
+  desktop-browser verified. Real Qwen reranking and optional `gpt-5.5`
+  model-written synthesis remain quality improvements.
+- In the Codex macOS sandbox, command-line Playwright can fail with Chromium
+  `MachPortRendezvousServer ... Permission denied`. `scripts/check.sh` skips
+  only that exact sandbox signature after Python tests, status, backend startup,
+  and frontend build pass. Any other Playwright failure is still a hard failure.
 
 ## Corpus Not Found
 
@@ -101,6 +141,26 @@ Fix:
 - Confirm the implementation uses `text-embedding-3-large` with
   `dimensions=3072` for embeddings and `gpt-5.5` for answers.
 
+## Hosted File Search Sync Stale Or Failed
+
+Symptoms:
+
+- `mode=hosted` falls back even though `.data/openai/vector_store_state.json`
+  exists.
+- `sync-openai-file-search` uploads unexpected source files.
+- Search results have hosted matches but no clickable local citations.
+
+Fix:
+
+- Hosted state is usable only when `status` is `synced`, a `vector_store_id`
+  exists, and the file signatures match the normalized Markdown directory.
+- Sync `.data/qms-index/normalized/*.md`; do not upload raw `.docx` files.
+- Keep `.data/openai/` gitignored because it contains local OpenAI file and
+  vector-store IDs.
+- If state is `failed`, inspect the `error` field, fix credentials/network/API
+  issues, and rerun `uv run sync-openai-file-search --force` when you need a
+  clean hosted vector store.
+
 ## FAISS Import Fails
 
 Symptoms:
@@ -128,6 +188,40 @@ Fix:
 - Rebuild the index with `text-embedding-3-large` and `dimensions=3072`.
 - Fail fast on incompatible manifests rather than silently searching.
 - Delete only generated index artifacts, not source files or unrelated work.
+
+## Hash Index Used In Production
+
+Symptoms:
+
+- Production mode starts against an index built with `--hash-embeddings`.
+- Eval or status output does not clearly say whether vectors are hash or OpenAI
+  embeddings.
+
+Fix:
+
+- Add or check manifest/status fields that distinguish `embedding_provider=hash`
+  from `embedding_provider=openai`.
+- Allow hash embeddings only for local demo, smoke tests, and deterministic
+  review.
+- Rebuild with `uv run build-qms-index` without `--hash-embeddings` before
+  claiming the production baseline.
+
+## Hosted File Search State Missing Or Stale
+
+Symptoms:
+
+- `search-status` reports no hosted state or a corpus hash that does not match
+  the local manifest.
+- Hosted mode cannot resolve uploaded file IDs back to local documents.
+
+Fix:
+
+- Run `uv run sync-openai-file-search` with `OPENAI_API_KEY` available in
+  `.env`.
+- Do not `source .env`; inspect individual variables with `grep` and `cut` if
+  needed.
+- Confirm `.data/openai/vector_store_state.json` reports `status=synced`, the
+  current corpus hash, and `file_count=189`.
 
 ## Reranker Unavailable
 
