@@ -9,16 +9,22 @@ out the remaining production gaps separately.
 - Corpus artifact at repo root: `Example_QMS_-_MedAI.zip`
 - Python environment synced with `uv sync`
 - OpenAI key available for `text-embedding-3-large` and `gpt-5.5`
-- Qwen reranker available locally or through the selected hosted endpoint when
-  testing the future non-fallback rerank path
+- Optional native search dependencies installed when you want to exercise local
+  `faiss.IndexFlatIP` and the Qwen CrossEncoder reranker instead of the
+  documented fallbacks:
+  `uv sync --group native-search`
 - Node.js 18+ for the React frontend
 
 Current caveat:
 
 - The local index is now built with OpenAI `text-embedding-3-large` at 3072
   dimensions and hosted OpenAI File Search is synced.
-- Reranking still reports `deterministic_fallback`; the real Qwen reranker path
-  remains a production gap.
+- The optional Qwen CrossEncoder reranker path is implemented. This sandbox
+  currently reports `deterministic_fallback` because `sentence_transformers` and
+  the local reranker model cache are not installed here.
+- The optional native FAISS path is implemented. If `faiss` is unavailable,
+  local vector search uses a NumPy `IndexFlatIP`-compatible fallback and reports
+  that backend in status/debug output.
 
 Check status:
 
@@ -48,6 +54,11 @@ Expected output should include:
   references.
 - Hosted File Search status `synced` with `189` files for the current corpus
   hash.
+- Vector backend: `faiss` when the optional native package is importable,
+  otherwise `numpy_fallback`.
+- Reranker backend: `sentence_transformers_cross_encoder` when the configured
+  CrossEncoder model is available, otherwise `deterministic_fallback` with a
+  warning.
 - Chunking: 600-token child chunks, 100-token overlap, 700-token table target,
   metadata chunks enabled, and one answer-time neighbor chunk.
 - Extraction warnings.

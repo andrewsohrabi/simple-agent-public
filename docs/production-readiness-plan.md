@@ -2,9 +2,11 @@
 
 This document reconciles the current `codex/mvp` implementation against the
 original MedAI QMS internal-search plan. It is intentionally direct: the current
-branch has crossed the OpenAI index, hosted File Search, API, desktop UI,
-eval-reporting, and browser-verification milestones. The remaining quality gaps
-are real reranking and optional model-written answer synthesis.
+branch has crossed the OpenAI index, hosted File Search, local/hosted retrieval,
+optional real reranking, guarded `gpt-5.5` answer synthesis, API, desktop UI,
+eval-reporting, and browser-verification milestones. The remaining quality gap
+is retrieval/evidence precision and broader quality eval improvement, not a
+missing core technical component.
 
 ## Current Baseline
 
@@ -21,11 +23,18 @@ are real reranking and optional model-written answer synthesis.
   189 uploaded normalized Markdown files.
 - SQLite store: documents/chunks/source files/ingest runs plus `revisions` and
   `doc_references`; latest status reports 2,355 references.
-- Reranker: enabled in config, currently active as `deterministic_fallback`.
+- Reranker: optional `sentence_transformers.CrossEncoder` implementation exists
+  for `Qwen/Qwen3-Reranker-4B`; this local environment reports
+  `deterministic_fallback` because `sentence_transformers` and the local model
+  cache are unavailable.
+- Answer synthesis: `gpt-5.5` synthesis is enabled by default through
+  `ANSWER_SYNTHESIS_ENABLED=true`, uses only validated retrieved evidence, and
+  falls back to deterministic extractive answers when the model call fails or
+  returns unsupported citation labels.
 - Current eval result: latest local OpenAI-index core eval run is 84/84 at
-  threshold `0`, average score `0.5639`, recorded in
-  `docs/eval-runs/2026-05-07-031242.md`. The quality gaps are explicit:
-  citation validity `0.3815`, Recall@k `0.4385`, and obsolete leakage `0.6833`.
+  threshold `0`, average score `0.5812`, recorded in
+  `docs/eval-runs/2026-05-07-040446.md`. The quality gaps are explicit:
+  citation validity `0.3773`, Recall@k `0.4504`, and obsolete leakage `0.3000`.
 - Frontend: desktop-first Vite workbench with prompt composer, mode controls,
   citations, source drawer, inventory/debug tabs, model/index stats, and
   Playwright E2E coverage.
@@ -44,12 +53,11 @@ The remaining production baseline means:
   `embedding_provider=openai`, with production startup refusing hash vectors
   unless an explicit demo/degraded override is set.
 - Keep hosted OpenAI File Search sync/retrieval healthy in search modes.
-- Replace deterministic reranking with real Qwen/BAAI integration or make the
-  fallback status explicit in production UI/evals.
-- Optional `gpt-5.5` answer synthesis over validated evidence with strict
-  citation checks. The current answerer is deterministic/extractive and
-  citation-validated; this avoids unsupported claims but is less polished than a
-  model-written synthesis.
+- Provision optional native dependencies and a local Qwen/BAAI model cache on
+  any demo machine where real local reranking should run; otherwise keep the
+  explicit deterministic fallback status in UI/evals.
+- Keep `gpt-5.5` answer synthesis guarded by local citation validation and keep
+  deterministic/extractive fallback available for degraded runs.
 - Eval reports with retrieval, answer, citation, count, and abstention metrics.
 - Final frontend source inspection, degraded status, and mode behavior verified
   through Playwright MCP/browser checks.
@@ -62,17 +70,17 @@ The remaining production baseline means:
 | Configuration | Mostly complete | Settings exist for the locked model baseline, chunking, retrieval, reranker, `QMS_USE_HASH_EMBEDDINGS`, provider status, and hosted state. Keep production validation strict against hash artifacts. |
 | Corpus ingestion | Complete for MVP | Extraction handles DOCX, tables, Mac artifacts, metadata-only docs, manifests, normalized Markdown, and reference extraction. Remaining hardening: stronger section detection and richer data-quality warnings. |
 | Local metadata store | Mostly complete | SQLite has documents/chunks/source files/ingest runs, FTS, `revisions`, and `doc_references`. Remaining work: richer exact lookup APIs, specialized revision/reference paths, and a stricter citation resolver that rejects unsupported source IDs. |
-| Local FAISS/FTS retrieval | Mostly complete | Chunking, metadata chunks, FTS, vector search, rank fusion, OpenAI 3072-dimensional vectors, provider manifest, and production hash gates exist. Remaining work: verify query/document parity continuously and improve category-level retrieval quality. |
-| Reranker | Fallback active | Config names `Qwen/Qwen3-Reranker-4B`, but current status reports `deterministic_fallback`. Need real Qwen reranker integration, BAAI fallback, degraded-mode telemetry, and reranker eval comparisons. |
+| Local FAISS/FTS retrieval | Complete for demo | Chunking, metadata chunks, FTS, vector search, rank fusion, OpenAI 3072-dimensional vectors, provider manifest, and production hash gates exist. Native `faiss.IndexFlatIP` is used when importable; otherwise status reports `numpy_fallback`. Remaining work: improve category-level retrieval quality. |
+| Reranker | Complete with fallback | Optional `sentence_transformers.CrossEncoder` path exists for Qwen and preserves source metadata; deterministic fallback reports `warning=real_reranker_unavailable` when dependencies/model cache are missing. Remaining work: provision native deps/model cache and run reranker eval comparisons. |
 | Hosted OpenAI File Search | Mostly complete | Hosted sync state is `synced` with 189 files for the current corpus hash and hosted retrieval is wired into modes. Remaining work: stronger hosted citation validation, failure-mode evals, and release-hardened fallback reporting. |
 | Query planning | Mostly complete | Heuristic routing exists for known-item, enumeration, revision, cross-doc, compliance, extraction, and exploratory queries, including revision diff and multi-hop reference following. Remaining quality work: typo tolerance, stronger revision parsing, and optional `gpt-5.4-mini` fallback. |
-| Answer generation and citations | Mostly complete | Current answers are extractive/template-based and cite retrieved chunks or SQL metadata. Remaining production polish: optional `gpt-5.5` synthesis and claim-level factuality judging. |
+| Answer generation and citations | Complete for demo | `gpt-5.5` synthesis over validated evidence is wired with deterministic fallback; answer citations remain local citation rows, not model-invented references. Remaining quality work: claim-level factuality judging and stronger answer evals. |
 | API | Complete for demo | `/search`, `/chat`, `/stats`, `/status`, `/health`, `/documents`, and `/chunks` exist with structured response contracts. |
 | Frontend | Complete for desktop demo | Workbench has prompt composer, source drawer, citations, modes, inventory, debug panel, fallback states, and desktop browser verification. |
 | Eval dataset | Mostly complete | 84-case core dataset and harness exist with Recall@k-style, top-k, count, citation, latest revision, and obsolete leakage metrics. Remaining work: MRR/precision and LLM-judge answer scoring. |
 | Eval reporting | Mostly complete | Markdown/JSON reports include commit SHA, corpus hash, index manifest hash, model config, retrieval mode, category metrics, and failures. Remaining work: previous-run deltas. |
 | Ablations | Partial | Chunking tradeoffs are documented. Missing OpenAI vs hash, hosted vs local, reranker on/off, Qwen vs BAAI, top-K, and model/dimension ablations. |
-| Documentation | Partial-complete | Design/readme/walkthrough/evals/indexing/troubleshooting docs exist. Need final updates after real reranking or fallback policy, answer synthesis, eval upgrades, and final browser verification are implemented and verified. |
+| Documentation | Mostly complete | Design/readme/walkthrough/evals/indexing/troubleshooting docs exist and now reflect native fallback, synthesis, eval, and browser-verification status. Remaining work is final release/handoff notes after the last eval pass. |
 | Commit/push/PR | Partial | Branch is pushed to the user fork and a draft PR exists there. Upstream PR creation is blocked by repository permissions. Need milestone commits for the remaining production work and final PR body update. |
 
 ## One-Shot Completion Sequence
@@ -187,23 +195,26 @@ existing `OPENAI_API_KEY` in `.env`.
 
 ### 4. Real Reranker Integration
 
-Goal: replace deterministic placeholder reranking with the planned local
-reranker path.
+Status: implemented with environment-dependent activation. Goal was to replace
+the placeholder with a real local backend when dependencies are available while
+preserving explicit fallback behavior.
 
 Tasks:
 
-- Add a reranker provider interface.
-- Implement Qwen `Qwen/Qwen3-Reranker-4B` path.
-- Implement BAAI `BAAI/bge-reranker-v2-m3` fallback.
-- Preserve chunk IDs, source IDs, and citation metadata through rerank.
-- Add degraded-mode warnings if the configured reranker cannot load.
-- Record reranker state in `/stats`, eval reports, and UI.
+- Added optional `sentence_transformers.CrossEncoder` backend.
+- Preserved Qwen `Qwen/Qwen3-Reranker-4B` as the default configured model.
+- Preserved BAAI `BAAI/bge-reranker-v2-m3` as the documented constrained-dev
+  fallback model config.
+- Preserved chunk IDs, source IDs, and citation metadata through rerank.
+- Added degraded-mode warnings if the configured reranker cannot load.
+- Recorded reranker state in `/stats`, eval reports, and UI debug data.
 
 Tests:
 
 - Reranker receives top-N fused candidates.
 - Reranker returns top-K evidence with citation IDs intact.
-- Failed Qwen load falls back to BAAI or deterministic ranking with warning.
+- Failed Qwen dependency/model load falls back to deterministic ranking with
+  warning.
 - Reranker-disabled mode preserves pre-rerank order.
 
 Gate:

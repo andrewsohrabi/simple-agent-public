@@ -73,3 +73,17 @@ def test_query_plan_routes_revision_inventory_to_sql():
     assert chain_plan.strategy == "revision_chain"
     assert chain_plan.requires_revision_chain is True
     assert chain_plan.include_obsolete is True
+
+
+def test_query_plan_obsolete_scope_is_explicit():
+    default_plan = plan_query("Find bill of materials evidence for MX1.")
+    assert default_plan.include_obsolete is False
+
+    obsolete_plan = plan_query("Find obsolete bill of materials evidence for MX1.")
+    assert obsolete_plan.include_obsolete is True
+
+    historical_plan = plan_query("Find historical bill of materials evidence for MX1.")
+    assert historical_plan.include_obsolete is True
+
+    all_revisions_plan = plan_query("Find all revisions for the MX1 bill of materials.")
+    assert all_revisions_plan.include_obsolete is True

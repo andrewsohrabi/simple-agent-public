@@ -44,9 +44,12 @@ Baseline naming:
 - Current indexed baseline: OpenAI `text-embedding-3-large` local vector index
   at 3072 dimensions, synced hosted OpenAI File Search state, and SQLite
   document/chunk/revision/reference tables.
-- Remaining production baseline: real Qwen reranker integration or documented
-  fallback selection and `gpt-5.5` long-form synthesis. The current answerer is
-  deterministic/extractive and citation-validated against retrieved evidence.
+- Reranker baseline: optional `sentence_transformers.CrossEncoder` Qwen backend
+  is implemented; this machine reports deterministic fallback because
+  `sentence_transformers` and the local model cache are unavailable.
+- Remaining production baseline: optional native dependency/model provisioning
+  for Qwen on the demo machine. `gpt-5.5` answer synthesis is implemented with
+  deterministic fallback and local citation validation.
 - Playwright MCP desktop verification was completed after the production UI/API
   pass; command-line Playwright is still skipped in this Codex macOS sandbox
   only when Chromium hits the documented MachPort permission failure.
@@ -57,7 +60,8 @@ Baseline naming:
 - [x] Add task tracker with implementation phases and status commands.
 - [x] Add walkthrough, indexing, eval, troubleshooting, and bug docs.
 - [x] Add `docs/eval-runs/.gitkeep` so eval run notes have a tracked home.
-- [ ] Confirm with implementers before changing files outside docs/task tracking.
+- Rule: confirm with implementers before changing files outside docs/task
+  tracking.
 
 ## Phase 1 - Corpus Ingestion
 
@@ -111,7 +115,8 @@ Dependencies: Phases 1 and 2.
 - [x] Merge lexical and dense candidates with deduplication by document/chunk.
 - [x] Boost exact document ID, filename, latest-active revision, and signed active
   records where appropriate.
-- [ ] Rerank the merged candidate set with the Qwen reranker.
+- [x] Rerank the merged candidate set with the optional Qwen CrossEncoder path
+  when native/model dependencies are available.
 - [x] Provide a degraded fallback when reranking is unavailable and report it in
   status/eval output.
 - [x] Return structured evidence objects with scores and citation metadata.
@@ -122,9 +127,9 @@ Dependencies: Phase 3 index.
 
 - [x] Add answer/routing tests that verify citation coverage and SQL-backed
   grounded behavior.
-- [ ] Use `gpt-5.5` as the default synthesis model for long-form answers.
+- [x] Use `gpt-5.5` as the default synthesis model for long-form answers.
 - [x] Build deterministic answers from structured evidence only.
-- [ ] Require citations for sourced claims and block invented citation IDs.
+- [x] Require citations for sourced claims and block invented citation IDs.
 - [x] Distinguish active, obsolete, metadata-only, and conflicting evidence in
   retrieved metadata.
 - [x] Add concise source summaries for every answer.
@@ -173,10 +178,11 @@ Dependencies: all implementation phases.
 - [x] Add production/degraded config gates for hash vs OpenAI embeddings.
 - [x] Build and commit the real OpenAI 3072-dimensional local index.
 - [x] Add hosted OpenAI File Search CLI, sync polling, reuse logic, and hosted retrieval.
-- [ ] Replace placeholder reranking with Qwen plus documented fallback behavior.
+- [x] Replace placeholder reranking with optional Qwen CrossEncoder plus
+  documented deterministic fallback behavior.
 - [x] Add revision/reference tables.
 - [x] Add specialized revision diff and multi-hop reference query paths.
-- [ ] Add `gpt-5.5` answer synthesis with strict citation validation.
+- [x] Add `gpt-5.5` answer synthesis with strict citation validation.
 - [x] Upgrade eval metrics to Recall@k-style recall, top-k hit, count accuracy,
   citation validity, latest revision accuracy, and obsolete leakage.
 - [x] Add clickable source inspector/degraded-status controls in the frontend.

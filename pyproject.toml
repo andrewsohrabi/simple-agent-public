@@ -31,6 +31,10 @@ dev = [
     "pytest",
     "pytest-asyncio",
 ]
+native-search = [
+    "faiss-cpu",
+    "sentence-transformers",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["evals"]

@@ -54,8 +54,11 @@ Fix:
   `embedding_provider=openai`, synced hosted OpenAI File Search state, and
   SQLite revision/reference tables.
 - Treat the current demo as OpenAI-indexed, hosted-synced, SQLite-backed, and
-  desktop-browser verified. Real Qwen reranking and optional `gpt-5.5`
-  model-written synthesis remain quality improvements.
+  desktop-browser verified. The optional Qwen CrossEncoder reranker path is
+  implemented, but this sandbox reports the deterministic fallback until the
+  native dependencies and model cache are provisioned. `gpt-5.5` answer
+  synthesis is implemented with citation-label validation and deterministic
+  fallback.
 - In the Codex macOS sandbox, command-line Playwright can fail with Chromium
   `MachPortRendezvousServer ... Permission denied`. `scripts/check.sh` skips
   only that exact sandbox signature after Python tests, status, backend startup,
@@ -167,12 +170,18 @@ Symptoms:
 
 - `ModuleNotFoundError: faiss`
 - Native wheel install errors.
+- `/stats` or `search-status` reports `vector_backend=numpy_fallback`.
 
 Fix:
 
 - Confirm the selected dependency is compatible with Python 3.13 and the host
   architecture.
 - Prefer `faiss-cpu` for the local MVP unless GPU support is explicitly needed.
+- Install the optional local native group when the review machine should use the
+  real native backend:
+  `uv sync --group native-search`.
+- The NumPy fallback is expected and supported when native FAISS is unavailable;
+  do not treat it as data loss unless the user explicitly requires native FAISS.
 - Record the exact package/version fix in `docs/bugs/known_failures.md` if it
   takes more than two attempts.
 
@@ -227,12 +236,20 @@ Fix:
 
 Symptoms:
 
-- Qwen reranker endpoint/model cannot load.
-- Retrieval works but rerank step fails.
+- `/stats` reports `backend=deterministic_fallback`.
+- `/stats` includes `warning=real_reranker_unavailable`.
+- `fallback_reason` mentions `sentence_transformers` or a missing local model.
 
 Fix:
 
-- Return fused lexical+dense ranking as a degraded fallback.
+- Install optional native dependencies with
+  `uv sync --group native-search` when the machine should run the real local
+  CrossEncoder path.
+- Ensure the configured model in `RERANKER_MODEL` is available in the local
+  Hugging Face cache, or set `RERANKER_MODEL` to a local CrossEncoder model
+  path.
+- Return fused lexical+dense ranking as the supported degraded fallback when the
+  model cannot load.
 - Surface degraded mode in `/index/status`, CLI output, and eval run notes.
 - Do not hide reranker failures during evals.
 

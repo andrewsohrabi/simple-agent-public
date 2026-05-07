@@ -21,6 +21,8 @@ def test_config_defaults_to_quality_baseline():
     assert config.table_chunk_max_tokens == 900
     assert config.create_metadata_chunks is True
     assert config.answer_context_neighbor_chunks == 1
+    assert config.answer_synthesis_enabled is True
+    assert config.answer_synthesis_max_input_chars == 12000
     assert config.reranker_enabled is True
     assert config.reranker_model == "Qwen/Qwen3-Reranker-4B"
     assert config.use_hash_embeddings is False
@@ -35,6 +37,26 @@ def test_config_validates_reranker_top_k():
         assert "RERANKER_TOP_K" in str(exc)
     else:
         raise AssertionError("expected invalid reranker config to fail")
+
+
+def test_config_validates_answer_synthesis_input_limit():
+    config = SearchConfig(answer_synthesis_max_input_chars=0)
+    try:
+        config.validate()
+    except ValueError as exc:
+        assert "ANSWER_SYNTHESIS_MAX_INPUT_CHARS" in str(exc)
+    else:
+        raise AssertionError("expected invalid answer synthesis config to fail")
+
+
+def test_config_reads_answer_synthesis_env(monkeypatch):
+    monkeypatch.setenv("ANSWER_SYNTHESIS_ENABLED", "false")
+    monkeypatch.setenv("ANSWER_SYNTHESIS_MAX_INPUT_CHARS", "2048")
+
+    config = SearchConfig.from_env()
+
+    assert config.answer_synthesis_enabled is False
+    assert config.answer_synthesis_max_input_chars == 2048
 
 
 def test_production_config_rejects_hash_embeddings():

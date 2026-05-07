@@ -31,6 +31,70 @@ Verification:
 - Local index manifest records embedding model, dimensions, vector index type,
   and normalization.
 
+## 2026-05-07 - Optional Native FAISS And Reranker Backends
+
+Decision:
+
+- Use native `faiss.IndexFlatIP` for local dense retrieval when the optional
+  `faiss` package is importable.
+- Keep the NumPy `IndexFlatIP`-compatible vector path as a supported fallback so
+  the committed review index remains usable without native wheels.
+- Use `sentence_transformers.CrossEncoder` for the configured
+  `Qwen/Qwen3-Reranker-4B` reranker when optional native/model dependencies are
+  installed and the model is available locally.
+- Keep deterministic reranking as an explicit degraded fallback with
+  `warning=real_reranker_unavailable` and a machine-readable `fallback_reason`.
+- Add the optional dependency group `native-search` so reviewers can opt into
+  native FAISS and local CrossEncoder reranking with
+  `uv sync --group native-search`.
+
+Reasoning:
+
+- The architecture should satisfy the production-quality component contract
+  without making every local reviewer download native wheels or a large reranker
+  model before the app can run.
+- Reporting `vector_backend`, `active_vector_backend`, reranker `backend`,
+  `warning`, and `fallback_reason` makes degraded execution visible instead of
+  silent.
+- The fallback paths preserve reviewability and CI reliability while allowing a
+  fully native local run on machines provisioned for it.
+
+Verification:
+
+- `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest evals/test_rerank.py evals/test_faiss_store.py evals/test_search_routing_and_citations.py evals/test_query_plan.py evals/test_server.py evals/test_config.py -q`
+- Result before this documentation update: `34 passed`.
+- Full regression before this documentation update: `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` -> `71 passed`.
+
+## 2026-05-07 - Guarded GPT-5.5 Answer Synthesis
+
+Decision:
+
+- Enable answer synthesis by default with `CHAT_MODEL=gpt-5.5` and
+  `ANSWER_SYNTHESIS_ENABLED=true`.
+- Build synthesis prompts only from validated retrieved chunks and local
+  citation rows.
+- Instruct the model to cite only provided labels such as `[S1]`.
+- Reject synthesized text that cites unknown labels or cites no provided label,
+  then return the deterministic extractive answer with
+  `answer_synthesis_fallback:unusable_content`.
+- If the OpenAI call fails, return the deterministic answer with
+  `answer_synthesis_fallback:<ExceptionType>`.
+
+Reasoning:
+
+- Regulated search needs polished synthesis, but the local citation resolver
+  remains the authority. The model may phrase the answer, not invent source
+  identity.
+- Deterministic fallback preserves demo reliability and makes degraded mode
+  visible to evals, API clients, and the UI.
+- SQL inventory/count/revision-list answer paths stay deterministic because
+  exact counts and revision chains should not be paraphrased into ambiguity.
+
+Verification:
+
+- `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest evals/test_answer_synthesis.py evals/test_config.py -q`
+- Result: `8 passed`.
+
 ## 2026-05-07 - Local Review Index Artifacts
 
 Decision:
@@ -449,6 +513,39 @@ Interpretation:
 - The run used `--fail-under 0` so the report captures every case without
   pretending the current quality score is a production pass threshold.
 
+## 2026-05-07 - Obsolete Filtering And Backend Closure Eval
+
+Command:
+
+```bash
+ANSWER_SYNTHESIS_ENABLED=false UV_CACHE_DIR=/private/tmp/uv-cache uv run search-evals --dataset core --mode local --report docs/eval-runs --fail-under 0
+```
+
+Report:
+
+- `docs/eval-runs/2026-05-07-040446.md`
+
+Result:
+
+| Metric | Value |
+| --- | ---: |
+| Cases | 84 |
+| Average score | 0.5812 |
+| Top-k hit rate | 0.5238 |
+| Recall@k | 0.4504 |
+| Citation validity | 0.3773 |
+| Latest revision accuracy | 1.0000 |
+| Obsolete leakage rate | 0.3000 |
+
+Interpretation:
+
+- Default obsolete filtering materially reduced obsolete leakage from `0.6833`
+  to `0.3000`.
+- Recall and overall score moved modestly upward, but citation validity remains
+  the biggest quality gap.
+- This run intentionally disabled live answer synthesis to isolate retrieval,
+  citation, and routing behavior after the backend closure changes.
+
 ## 2026-05-07 - OpenAI Index And Hosted File Search Verified
 
 Decision:
@@ -460,8 +557,9 @@ Decision:
   normalized Markdown files in `.data/openai/vector_store_state.json`.
 - Treat SQLite revision/reference storage as present; current status reports
   `revisions` and `doc_references` tables with 2,355 references.
-- Keep reranking labeled as deterministic fallback until the Qwen/BAAI backend is
-  actually active.
+- Keep reranking status explicit: `sentence_transformers_cross_encoder` when the
+  Qwen/BAAI CrossEncoder backend is actually active, otherwise
+  `deterministic_fallback` with a warning and fallback reason.
 - Treat Playwright MCP/browser final verification as complete for the
   desktop-first onsite walkthrough after the UI/API pass below.
 

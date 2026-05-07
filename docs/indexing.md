@@ -76,7 +76,8 @@ Target production baseline:
 
 - Model: `text-embedding-3-large`
 - Dimensions: `3072`
-- Index: FAISS `IndexFlatIP`
+- Index: native FAISS `IndexFlatIP` when `faiss` is importable; NumPy
+  `IndexFlatIP`-compatible fallback otherwise
 
 Build rules:
 
@@ -90,7 +91,9 @@ Current indexed baseline:
 
 - The current local index uses OpenAI `text-embedding-3-large` embeddings at
   3072 dimensions, records `embedding_provider=openai`, and stores normalized
-  vectors in the FAISS-compatible `IndexFlatIP` artifact.
+  vectors in the `IndexFlatIP` artifact. Runtime status reports
+  `vector_backend=faiss` when native FAISS is installed and `numpy_fallback`
+  otherwise.
 - The deterministic hash path remains available through
   `build-qms-index --hash-embeddings` for smoke tests and offline regression
   work only.
@@ -122,11 +125,22 @@ Recommended retrieval flow:
 4. Merge by chunk ID with score provenance.
 5. Apply deterministic boosts for exact ID, filename, latest-active revision, and
    signed active records.
-6. Rerank the top merged candidates with the Qwen reranker.
+6. Rerank the top merged candidates with the optional Qwen CrossEncoder
+   reranker.
 7. Return structured evidence objects.
 
 If Qwen reranking is unavailable, return fused candidates, mark the response as
 degraded, and include the degraded reason in status output.
+
+To enable native local FAISS and Qwen/BAAI reranking on a review machine:
+
+```bash
+uv sync --group native-search
+```
+
+Then ensure the configured reranker model is available in the local Hugging Face
+cache, or set `RERANKER_MODEL` to a local CrossEncoder model path. Without those
+dependencies, `/stats` reports the deterministic fallback explicitly.
 
 ## Manifest
 

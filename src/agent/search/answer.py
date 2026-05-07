@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from agent.config import SearchConfig
+from agent.search.answer_synthesis import (
+    AnswerSynthesizer,
+    OpenAIAnswerSynthesizer,
+    uses_only_known_source_labels,
+)
 from agent.search.citations import (
     citations_for_hits,
     validate_citation_rows,
@@ -17,8 +23,16 @@ def _citation_label(hit: SearchHit) -> str:
 
 
 class SearchAnswerer:
-    def __init__(self, store: SearchStore):
+    def __init__(
+        self,
+        store: SearchStore,
+        *,
+        config: SearchConfig | None = None,
+        synthesizer: AnswerSynthesizer | None = None,
+    ):
         self.store = store
+        self.config = config or SearchConfig.from_env()
+        self.synthesizer = synthesizer
 
     def answer(self, query: str, plan: QueryPlan, hits: list[SearchHit]) -> dict[str, object]:
         citations = citations_for_hits(self.store, hits)
@@ -81,19 +95,32 @@ class SearchAnswerer:
         if plan.requires_diff:
             return self._revision_diff_answer(query, plan, hits, citations, citation_errors)
 
-        top = hits[:5]
-        answer_lines = [
-            "I found source-backed MedAI QMS evidence for this request:",
-            "",
-        ]
-        for hit in top:
-            excerpt = " ".join(hit.text.split())[:420]
-            answer_lines.append(f"- {_citation_label(hit)}: {excerpt}")
-        answer = "\n".join(answer_lines)
+        answer = self._deterministic_retrieval_answer(hits)
+
+        citation_rows = [asdict(citation) for citation in citations]
+        warnings = list(citation_errors)
+        if self.config.answer_synthesis_enabled:
+            try:
+                synthesizer = self.synthesizer or OpenAIAnswerSynthesizer()
+                synthesized = synthesizer.synthesize(
+                    query=query,
+                    hits=hits,
+                    citation_rows=citation_rows,
+                    model=self.config.chat_model,
+                    max_input_chars=self.config.answer_synthesis_max_input_chars,
+                )
+                if synthesized and uses_only_known_source_labels(
+                    synthesized, citation_rows
+                ):
+                    answer = synthesized
+                else:
+                    warnings.append("answer_synthesis_fallback:unusable_content")
+            except Exception as exc:
+                warnings.append(f"answer_synthesis_fallback:{type(exc).__name__}")
 
         return {
             "answer": answer,
-            "citations": [asdict(citation) for citation in citations],
+            "citations": citation_rows,
             "retrieved_documents": [
                 {
                     "chunk_id": hit.chunk_id,
@@ -108,8 +135,19 @@ class SearchAnswerer:
                 for hit in hits
             ],
             "query_plan": asdict(plan),
-            "warnings": citation_errors,
+            "warnings": warnings,
         }
+
+    def _deterministic_retrieval_answer(self, hits: list[SearchHit]) -> str:
+        top = hits[:5]
+        answer_lines = [
+            "I found source-backed MedAI QMS evidence for this request:",
+            "",
+        ]
+        for hit in top:
+            excerpt = " ".join(hit.text.split())[:420]
+            answer_lines.append(f"- {_citation_label(hit)}: {excerpt}")
+        return "\n".join(answer_lines)
 
     def _documents_for_plan(self, plan: QueryPlan, limit: int) -> list[dict[str, object]]:
         if plan.requires_revision_chain:

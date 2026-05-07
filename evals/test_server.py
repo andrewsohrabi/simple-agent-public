@@ -42,7 +42,16 @@ def test_stats_exposes_model_and_index_configuration():
     assert model_config["chat_model"] == "gpt-5.5"
     assert model_config["agent_model"] == "gpt-5.5"
     assert model_config["reranker_model"] == "Qwen/Qwen3-Reranker-4B"
-    assert data["reranker"]["backend"] == "deterministic_fallback"
+    reranker = data["reranker"]
+    assert reranker["enabled"] is True
+    assert reranker["configured_model"] == "Qwen/Qwen3-Reranker-4B"
+    assert reranker["backend"] in {
+        "sentence_transformers_cross_encoder",
+        "deterministic_fallback",
+    }
+    if reranker["backend"] == "deterministic_fallback":
+        assert reranker["warning"] == "real_reranker_unavailable"
+        assert reranker["fallback_reason"]
 
 
 def test_index_status_alias_exposes_stats():

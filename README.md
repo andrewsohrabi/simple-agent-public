@@ -110,7 +110,7 @@ flowchart LR
     Embed --> Vector["FAISS-compatible IndexFlatIP store"]
     SQLite --> Search["Deterministic query planner"]
     Vector --> Search
-    Search --> Rerank["Deterministic rerank fallback"]
+    Search --> Rerank["CrossEncoder reranker or deterministic fallback"]
     Rerank --> Answer["Citation-grounded answer"]
     Answer --> UI["Desktop-first React search workbench"]
 ```
@@ -145,20 +145,28 @@ Current indexed baseline:
   uploaded normalized Markdown files.
 - SQLite includes `revisions` and `doc_references`; current status reports
   `2,355` extracted references.
-- Reranking is enabled but currently uses the deterministic fallback backend
-  while the Qwen implementation remains a production gap.
+- Reranking is implemented with an optional `sentence_transformers.CrossEncoder`
+  backend for `Qwen/Qwen3-Reranker-4B`. This local environment does not have the
+  native/model dependencies installed, so `/stats` correctly reports
+  `backend=deterministic_fallback` with `warning=real_reranker_unavailable`.
 - The latest 84-case local OpenAI-index eval is `84 / 84` at harness threshold
-  `0`, average score `0.5639`, in `docs/eval-runs/2026-05-07-031242.md`.
-  The report is intentionally candid: citation validity is `0.3815`,
-  Recall@k is `0.4385`, and obsolete leakage needs more ranking/filter work.
+  `0`, average score `0.5812`, in `docs/eval-runs/2026-05-07-040446.md`.
+  The report is intentionally candid: citation validity is `0.3773`,
+  Recall@k is `0.4504`, and obsolete leakage improved to `0.3000` after the
+  default obsolete-filtering pass.
 - `docs/architecture-decisions.md` records chunking, table-splitting,
   metadata-only, model-baseline, artifact, and eval trade-off decisions.
 
 Remaining production baseline:
 
-- Complete real Qwen/BAAI reranking and `gpt-5.5` long-form synthesis if the
-  demo needs model-written narrative rather than deterministic extractive
-  answers.
+- Install/cache the optional native reranker dependencies if the demo machine
+  should run Qwen locally instead of the deterministic fallback:
+  `uv sync --group native-search`. Then ensure the configured Hugging Face model
+  is available in the local cache or set `RERANKER_MODEL` to a local model path.
+- `gpt-5.5` answer synthesis is wired behind `ANSWER_SYNTHESIS_ENABLED=true`.
+  It uses validated retrieved evidence and falls back to deterministic
+  extractive answers with an explicit warning if the model call fails or returns
+  unsupported citation labels.
 - Playwright MCP desktop verification completed on `2026-05-07`: the app loaded
   at `http://127.0.0.1:3060`, an enumeration query ran through the UI, Sources
   and Debug opened, and the browser console showed no warnings or errors. The

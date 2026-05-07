@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from agent.config import SearchConfig
 from agent.search.citations import validate_citation_rows, validate_citations
 from agent.search.schema import Citation
@@ -101,6 +103,7 @@ def _service(tmp_path) -> QmsSearchService:
         index_dir=tmp_path,
         openai_vector_store_state=tmp_path / "openai_state.json",
         use_hash_embeddings=True,
+        answer_synthesis_enabled=False,
     )
     store = SearchStore(tmp_path / "qms.sqlite")
     store.initialize()
@@ -218,6 +221,44 @@ def test_service_uses_hosted_search_then_falls_back_to_local(tmp_path):
     fallback = service.search("Radiographic verification protocol", mode="auto")
     assert fallback["retrieved_documents"][0]["doc_id"] == "VVPR-P01-179"
     assert "hosted_file_search_no_hits" in fallback["warnings"]
+
+
+@pytest.mark.parametrize("mode", ["local", "hybrid"])
+def test_default_hybrid_retrieval_excludes_obsolete_hits_and_citations(tmp_path, mode):
+    service = _service(tmp_path)
+
+    result = service.search("older bill of materials evidence", mode=mode)
+
+    assert result["query_plan"]["strategy"] == "hybrid"
+    assert result["retrieved_documents"]
+    assert all(
+        not doc["metadata"].get("is_obsolete")
+        for doc in result["retrieved_documents"]
+    )
+    assert {
+        (doc["doc_id"], doc["revision"])
+        for doc in result["retrieved_documents"]
+    } == {("BOM-055", "G")}
+    assert validate_citation_rows(service.store, result["citations"]) == []
+    assert {
+        (citation["doc_id"], citation["revision"])
+        for citation in result["citations"]
+    } == {("BOM-055", "G")}
+
+
+def test_explicit_obsolete_query_includes_obsolete_records(tmp_path):
+    service = _service(tmp_path)
+
+    result = service.search("obsolete older bill of materials evidence", mode="local")
+
+    assert result["query_plan"]["include_obsolete"] is True
+    assert any(
+        doc["doc_id"] == "BOM-055"
+        and doc["revision"] == "F"
+        and doc["metadata"].get("is_obsolete")
+        for doc in result["retrieved_documents"]
+    )
+    assert validate_citation_rows(service.store, result["citations"]) == []
 
 
 def test_multi_hop_traceability_follows_local_references(tmp_path):

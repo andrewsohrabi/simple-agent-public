@@ -22,7 +22,8 @@
     "answer_context_neighbor_chunks": 1
   },
   "corpus_hash": "e1ad1fdd8b70f12b20af12a046ef0f0d2a6050b79ed3246ae31138edeca91caf",
-  "storage": "numpy-compatible IndexFlatIP",
+  "storage": "vectors.npy + vector_metadata.json; search backend=numpy IndexFlatIP-compatible fallback",
   "index_path": ".data/qms-index/vectors.npy",
-  "metadata_path": ".data/qms-index/vector_metadata.json"
+  "metadata_path": ".data/qms-index/vector_metadata.json",
+  "vector_backend": "numpy_fallback"
 }

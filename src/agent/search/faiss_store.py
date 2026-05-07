@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import importlib
 import json
-from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from agent.config import SearchConfig
 from agent.search.embeddings import EmbeddingProvider, normalize_vectors
 from agent.search.schema import Chunk, SearchHit
+
+
+VECTOR_BACKEND_FAISS = "faiss"
+VECTOR_BACKEND_NUMPY_FALLBACK = "numpy_fallback"
 
 
 class LocalVectorIndex:
@@ -20,6 +25,31 @@ class LocalVectorIndex:
         self.metadata_path = index_dir / "vector_metadata.json"
         self.manifest_path = index_dir / "manifest.json"
 
+    def _load_faiss(self) -> Any | None:
+        try:
+            return importlib.import_module("faiss")
+        except ImportError:
+            return None
+
+    def _current_vector_backend(self) -> str:
+        if self._load_faiss() is not None:
+            return VECTOR_BACKEND_FAISS
+        return VECTOR_BACKEND_NUMPY_FALLBACK
+
+    def _create_faiss_index(self, vectors: np.ndarray, faiss_module: Any) -> Any:
+        index = faiss_module.IndexFlatIP(int(vectors.shape[1]))
+        if vectors.shape[0] > 0:
+            index.add(vectors)
+        return index
+
+    def _storage_description(self, vector_backend: str) -> str:
+        if vector_backend == VECTOR_BACKEND_FAISS:
+            return "vectors.npy + vector_metadata.json; search backend=faiss.IndexFlatIP"
+        return (
+            "vectors.npy + vector_metadata.json; "
+            "search backend=numpy IndexFlatIP-compatible fallback"
+        )
+
     def build(
         self,
         chunks: list[Chunk],
@@ -28,13 +58,28 @@ class LocalVectorIndex:
         corpus_hash: str = "",
     ) -> dict[str, object]:
         self.index_dir.mkdir(parents=True, exist_ok=True)
-        vectors = embedding_provider.embed_texts([chunk.search_text for chunk in chunks])
+        vectors = embedding_provider.embed_texts(
+            [chunk.search_text for chunk in chunks]
+        )
         if vectors and len(vectors[0]) != self.config.embedding_dimensions:
             raise ValueError(
                 "FAISS dimension mismatch: "
                 f"expected {self.config.embedding_dimensions}, got {len(vectors[0])}"
             )
-        normalized = normalize_vectors(vectors) if vectors else np.empty((0, self.config.embedding_dimensions), dtype=np.float32)
+        normalized = (
+            normalize_vectors(vectors)
+            if vectors
+            else np.empty((0, self.config.embedding_dimensions), dtype=np.float32)
+        )
+        normalized = np.ascontiguousarray(normalized, dtype=np.float32)
+        faiss_module = self._load_faiss()
+        vector_backend = (
+            VECTOR_BACKEND_FAISS
+            if faiss_module is not None
+            else VECTOR_BACKEND_NUMPY_FALLBACK
+        )
+        if faiss_module is not None:
+            self._create_faiss_index(normalized, faiss_module)
         np.save(self.index_path, normalized)
         metadata = [
             {
@@ -49,16 +94,21 @@ class LocalVectorIndex:
             }
             for chunk in chunks
         ]
-        self.metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+        self.metadata_path.write_text(
+            json.dumps(metadata, indent=2), encoding="utf-8"
+        )
         manifest = {
             "created_at": datetime.now(UTC).isoformat(),
-            "embedding_provider": getattr(embedding_provider, "provider_name", "unknown"),
+            "embedding_provider": getattr(
+                embedding_provider, "provider_name", "unknown"
+            ),
             "embedding_model": self.config.embedding_model,
             "embedding_dimensions": self.config.embedding_dimensions,
             "embedding_batch_size": self.config.embedding_batch_size,
             "actual_embedding_dimensions": int(normalized.shape[1]),
             "vector_index": self.config.vector_index,
             "faiss_index_type": self.config.faiss_index_type,
+            "vector_backend": vector_backend,
             "vectors_normalized": True,
             "chunk_count": len(chunks),
             "chunking": {
@@ -71,14 +121,18 @@ class LocalVectorIndex:
                 "table_repeat_header": self.config.table_repeat_header,
                 "create_metadata_chunks": self.config.create_metadata_chunks,
                 "parent_section_max_tokens": self.config.parent_section_max_tokens,
-                "answer_context_neighbor_chunks": self.config.answer_context_neighbor_chunks,
+                "answer_context_neighbor_chunks": (
+                    self.config.answer_context_neighbor_chunks
+                ),
             },
             "corpus_hash": corpus_hash,
-            "storage": "numpy-compatible IndexFlatIP",
+            "storage": self._storage_description(vector_backend),
             "index_path": str(self.index_path),
             "metadata_path": str(self.metadata_path),
         }
-        self.manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        self.manifest_path.write_text(
+            json.dumps(manifest, indent=2), encoding="utf-8"
+        )
         return manifest
 
     def exists(self) -> bool:
@@ -98,20 +152,35 @@ class LocalVectorIndex:
     ) -> list[SearchHit]:
         if not self.exists():
             return []
-        vectors = np.load(self.index_path)
+        vectors = np.ascontiguousarray(np.load(self.index_path), dtype=np.float32)
         metadata = json.loads(self.metadata_path.read_text(encoding="utf-8"))
-        if vectors.size == 0:
+        if vectors.size == 0 or limit <= 0:
             return []
         query_vector = embedding_provider.embed_query(query)
         if len(query_vector) != vectors.shape[1]:
             raise ValueError(
-                f"Query embedding dimension mismatch: expected {vectors.shape[1]}, got {len(query_vector)}"
+                "Query embedding dimension mismatch: "
+                f"expected {vectors.shape[1]}, got {len(query_vector)}"
             )
-        query_matrix = normalize_vectors([query_vector])
-        scores = vectors @ query_matrix[0]
-        indexes = np.argsort(scores)[::-1][:limit]
+        query_matrix = np.ascontiguousarray(
+            normalize_vectors([query_vector]), dtype=np.float32
+        )
+        faiss_module = self._load_faiss()
+        if faiss_module is not None:
+            faiss_index = self._create_faiss_index(vectors, faiss_module)
+            k = min(limit, len(metadata), int(vectors.shape[0]))
+            if k <= 0:
+                return []
+            score_matrix, index_matrix = faiss_index.search(query_matrix, k)
+            scores = score_matrix[0]
+            indexes = index_matrix[0]
+        else:
+            scores = vectors @ query_matrix[0]
+            indexes = np.argsort(scores)[::-1][:limit]
         hits: list[SearchHit] = []
-        for index in indexes:
+        for position, index in enumerate(indexes):
+            if int(index) < 0 or int(index) >= len(metadata):
+                continue
             item = metadata[int(index)]
             hits.append(
                 SearchHit(
@@ -121,7 +190,11 @@ class LocalVectorIndex:
                     title=item["title"],
                     section=item["section"],
                     text=item["text"],
-                    score=float(scores[int(index)]),
+                    score=float(
+                        scores[position]
+                        if faiss_module is not None
+                        else scores[int(index)]
+                    ),
                     source="faiss",
                     metadata=item.get("metadata", {}),
                 )
@@ -132,6 +205,17 @@ class LocalVectorIndex:
         manifest = self.manifest()
         if manifest is None:
             return {"exists": False}
+        manifest = dict(manifest)
+        active_vector_backend = self._current_vector_backend()
+        vector_backend = str(
+            manifest.get("vector_backend") or active_vector_backend
+        )
+        manifest.setdefault("vector_backend", vector_backend)
+        manifest["active_vector_backend"] = active_vector_backend
+        if not manifest.get("storage") or str(manifest["storage"]).startswith(
+            "numpy-compatible"
+        ):
+            manifest["storage"] = self._storage_description(vector_backend)
         return {"exists": True, **manifest}
 
     def validate_production_ready(self) -> None:

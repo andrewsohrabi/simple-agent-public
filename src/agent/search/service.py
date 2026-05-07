@@ -6,7 +6,7 @@ from agent.search.embeddings import HashEmbeddingProvider, OpenAIEmbeddingProvid
 from agent.search.faiss_store import LocalVectorIndex
 from agent.search.hybrid import HybridSearchService
 from agent.search.openai_file_search import OpenAIFileSearch
-from agent.search.query_plan import plan_query
+from agent.search.query_plan import QueryPlan, plan_query
 from agent.search.schema import SearchHit
 from agent.search.sqlite_store import SearchStore
 
@@ -26,7 +26,7 @@ class QmsSearchService:
         self.hybrid = HybridSearchService(
             self.store, self.vector_index, self.embedding_provider, config
         )
-        self.answerer = SearchAnswerer(self.store)
+        self.answerer = SearchAnswerer(self.store, config=config)
         self.hosted_search = OpenAIFileSearch(config)
 
     def search(self, query: str, *, mode: str = "auto", limit: int = 16) -> dict[str, object]:
@@ -75,6 +75,7 @@ class QmsSearchService:
         else:
             hits = self._hybrid_or_lexical(query, mode, limit, warnings)
 
+        hits = self._apply_obsolete_scope(plan, hits, warnings)
         response = self.answerer.answer(query, plan, hits[:limit])
         response["mode"] = mode
         response["warnings"] = [*response.get("warnings", []), *warnings]
@@ -234,3 +235,80 @@ class QmsSearchService:
         except Exception as exc:  # fall back to deterministic lexical search
             warnings.append(f"vector_search_fallback:{type(exc).__name__}")
         return self.store.fts_search(query, limit=limit)
+
+    def _apply_obsolete_scope(
+        self, plan: QueryPlan, hits: list[SearchHit], warnings: list[str]
+    ) -> list[SearchHit]:
+        annotated = self._annotate_obsolete_metadata(hits)
+        if plan.include_obsolete:
+            return annotated
+        filtered = [
+            hit
+            for hit in annotated
+            if _metadata_obsolete_flag(hit.metadata.get("is_obsolete")) is not True
+        ]
+        removed = len(annotated) - len(filtered)
+        if removed:
+            warnings.append(f"obsolete_hits_filtered:{removed}")
+        return filtered
+
+    def _annotate_obsolete_metadata(self, hits: list[SearchHit]) -> list[SearchHit]:
+        if not hits:
+            return []
+        statuses = self._document_obsolete_statuses(hits)
+        annotated: list[SearchHit] = []
+        for hit in hits:
+            key = (hit.doc_id.upper(), hit.revision.upper())
+            is_obsolete = statuses.get(key)
+            if is_obsolete is None:
+                is_obsolete = _metadata_obsolete_flag(hit.metadata.get("is_obsolete"))
+            if is_obsolete is None:
+                annotated.append(hit)
+                continue
+            annotated.append(
+                SearchHit(
+                    chunk_id=hit.chunk_id,
+                    doc_id=hit.doc_id,
+                    revision=hit.revision,
+                    title=hit.title,
+                    section=hit.section,
+                    text=hit.text,
+                    score=hit.score,
+                    source=hit.source,
+                    metadata={**hit.metadata, "is_obsolete": is_obsolete},
+                )
+            )
+        return annotated
+
+    def _document_obsolete_statuses(
+        self, hits: list[SearchHit]
+    ) -> dict[tuple[str, str], bool]:
+        keys = sorted({(hit.doc_id.upper(), hit.revision.upper()) for hit in hits})
+        statuses: dict[tuple[str, str], bool] = {}
+        with self.store.connect() as conn:
+            for doc_id, revision in keys:
+                row = conn.execute(
+                    """
+                    SELECT is_obsolete
+                    FROM documents
+                    WHERE doc_id = ? AND revision = ?
+                    """,
+                    (doc_id, revision),
+                ).fetchone()
+                if row is not None:
+                    statuses[(doc_id, revision)] = bool(row["is_obsolete"])
+        return statuses
+
+
+def _metadata_obsolete_flag(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes"}:
+            return True
+        if normalized in {"false", "0", "no", ""}:
+            return False
+    return None

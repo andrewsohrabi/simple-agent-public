@@ -53,6 +53,8 @@ class SearchConfig:
     hybrid_top_n_vector: int = 80
     hybrid_top_n_metadata: int = 30
     answer_max_chunks: int = 12
+    answer_synthesis_enabled: bool = True
+    answer_synthesis_max_input_chars: int = 12000
     reranker_enabled: bool = True
     reranker_model: str = "Qwen/Qwen3-Reranker-4B"
     reranker_top_n_candidates: int = 80
@@ -116,6 +118,13 @@ class SearchConfig:
                 "HYBRID_TOP_N_METADATA", cls.hybrid_top_n_metadata
             ),
             answer_max_chunks=_env_int("ANSWER_MAX_CHUNKS", cls.answer_max_chunks),
+            answer_synthesis_enabled=_env_bool(
+                "ANSWER_SYNTHESIS_ENABLED", cls.answer_synthesis_enabled
+            ),
+            answer_synthesis_max_input_chars=_env_int(
+                "ANSWER_SYNTHESIS_MAX_INPUT_CHARS",
+                cls.answer_synthesis_max_input_chars,
+            ),
             reranker_enabled=_env_bool("RERANKER_ENABLED", cls.reranker_enabled),
             reranker_model=_env("RERANKER_MODEL", cls.reranker_model),
             reranker_top_n_candidates=_env_int(
@@ -165,6 +174,9 @@ class SearchConfig:
             "HYBRID_TOP_N_VECTOR": self.hybrid_top_n_vector,
             "HYBRID_TOP_N_METADATA": self.hybrid_top_n_metadata,
             "ANSWER_MAX_CHUNKS": self.answer_max_chunks,
+            "ANSWER_SYNTHESIS_MAX_INPUT_CHARS": (
+                self.answer_synthesis_max_input_chars
+            ),
         }
         for name, value in positive_fields.items():
             if value <= 0:
@@ -213,6 +225,10 @@ class SearchConfig:
             "hybrid_top_n_vector": self.hybrid_top_n_vector,
             "hybrid_top_n_metadata": self.hybrid_top_n_metadata,
             "answer_max_chunks": self.answer_max_chunks,
+            "answer_synthesis_enabled": self.answer_synthesis_enabled,
+            "answer_synthesis_max_input_chars": (
+                self.answer_synthesis_max_input_chars
+            ),
             "chat_model": self.chat_model,
             "agent_model": self.agent_model,
             "enrichment_model": self.enrichment_model,
