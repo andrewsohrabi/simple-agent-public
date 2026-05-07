@@ -1,5 +1,7 @@
 # Environment
 .env
+.env.*
+!.env.example
 .venv/
 
 # Python
@@ -9,6 +11,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
 # IDE
 .vscode/
@@ -39,3 +42,14 @@ data/raw/
 *.sqlite-shm
 *.sqlite-wal
 Example QMS - MedAI/
+
+# Runtime memory artifacts
+memory_store/
+artifacts/
+
+# Local Codex helpers
+.codex-local/
+.claude/
+
+# Local/private assets
+Backend Take Home.pdf
