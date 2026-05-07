@@ -1,0 +1,26 @@
+{
+  "created_at": "2026-05-07T05:35:25.749496+00:00",
+  "embedding_model": "text-embedding-3-large",
+  "embedding_dimensions": 3072,
+  "actual_embedding_dimensions": 3072,
+  "vector_index": "faiss",
+  "faiss_index_type": "IndexFlatIP",
+  "vectors_normalized": true,
+  "chunk_count": 7778,
+  "chunking": {
+    "chunk_size_tokens": 600,
+    "chunk_overlap_tokens": 100,
+    "min_chunk_tokens": 120,
+    "max_chunk_tokens": 900,
+    "table_chunk_target_tokens": 700,
+    "table_chunk_max_tokens": 900,
+    "table_repeat_header": true,
+    "create_metadata_chunks": true,
+    "parent_section_max_tokens": 1800,
+    "answer_context_neighbor_chunks": 1
+  },
+  "corpus_hash": "e1ad1fdd8b70f12b20af12a046ef0f0d2a6050b79ed3246ae31138edeca91caf",
+  "storage": "numpy-compatible IndexFlatIP",
+  "index_path": ".data/qms-index/vectors.npy",
+  "metadata_path": ".data/qms-index/vector_metadata.json"
+}

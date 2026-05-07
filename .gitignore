@@ -22,3 +22,17 @@ uv.lock
 
 # Node
 node_modules/
+
+# Generated search artifacts. The local review index is intentionally committed
+# for portability; hosted OpenAI state and raw eval traces remain local-only.
+.data/*
+!.data/
+!.data/qms-index/
+!.data/qms-index/**
+data/generated/
+data/raw/
+*.faiss
+.data/openai/
+.data/eval-runs/
+*.sqlite-shm
+*.sqlite-wal
