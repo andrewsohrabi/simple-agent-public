@@ -28,12 +28,11 @@ node_modules/
 frontend/playwright-report/
 frontend/test-results/
 
-# Generated search artifacts. The local review index is intentionally committed
-# for portability; hosted OpenAI state and raw eval traces remain local-only.
+# Generated search artifacts. QMS indexes, vectors, hosted OpenAI state,
+# and raw eval traces remain local-only; rebuild with `uv run ingest-qms`
+# and `uv run build-qms-index`.
 .data/*
 !.data/
-!.data/qms-index/
-!.data/qms-index/**
 data/generated/
 data/raw/
 *.faiss
