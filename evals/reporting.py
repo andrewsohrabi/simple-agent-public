@@ -63,9 +63,18 @@ class ScoreBreakdown:
     latest_revision_correct: bool | None = None
     obsolete_leakage: bool | None = None
     invalid_citations: tuple[str, ...] = ()
+    answer_text: str = ""
+    source_ids: tuple[str, ...] = ()
+    retrieved_source_ids: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        row = asdict(self)
+        row["pass"] = self.passed
+        row["missing_phrases"] = list(self.missing_terms)
+        row["missing_doc_ids"] = list(self.missing_required_doc_ids)
+        row["source_hit"] = bool(self.matched_sources or self.matched_required_doc_ids)
+        row["backend"] = self.observed_backend
+        return row
 
 
 def normalize_text(value: str) -> str:
@@ -237,6 +246,9 @@ def score_case(
         latest_revision_correct=latest_revision_correct,
         obsolete_leakage=obsolete_leakage,
         invalid_citations=invalid_citations,
+        answer_text=answer,
+        source_ids=tuple(source_ids or ()),
+        retrieved_source_ids=tuple(retrieved_source_ids or ()),
     )
 
 

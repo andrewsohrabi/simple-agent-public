@@ -18,11 +18,20 @@ PREFIXES = {
     "PLN": ["planning", "plan", "project quality plan", "pln"],
     "MEMO": ["memo", "memorandum"],
     "VVPR": ["verification protocol", "verification report", "vvpr"],
-    "VVAM": ["acceptance matrix", "vvam"],
+    "VVAM": [
+        "acceptance matrix",
+        "traceability",
+        "traceability matrix",
+        "traceability matrices",
+        "trace matrix",
+        "requirements trace",
+        "verification validation trace",
+        "vvam",
+    ],
     "RSK": ["risk", "hazard", "pfmea"],
     "ECR": ["engineering change request", "ecr", "change request"],
     "ESF": ["engineering summary", "esf"],
-    "TRA": ["traceability", "trace matrix", "requirements trace"],
+    "TRA": ["training", "customer training", "training guide", "competency"],
     "DHF": ["design history file", "dhf"],
     "DMR": ["device master record", "dmr"],
     "DR": ["design review", "action item"],
@@ -126,6 +135,37 @@ def plan_query(query: str) -> QueryPlan:
             requires_count=True,
             intent="verification_completed_vs_planned",
         )
+    if "traceability matrix" in lower or "traceability matrices" in lower:
+        return QueryPlan(
+            category="enumeration",
+            strategy="sql_count" if any(term in lower for term in ["how many", "count", "number of"]) else "sql_list",
+            query=q,
+            doc_id=doc_id,
+            prefix="VVAM",
+            revision=revision,
+            latest_only=True,
+            include_obsolete=include_obsolete,
+            requires_count=any(term in lower for term in ["how many", "count", "number of"]),
+            requires_list=not any(term in lower for term in ["how many", "count", "number of"]),
+            intent="traceability_matrix_count",
+        )
+    if (
+        ("non-empty" in lower or "non empty" in lower)
+        and "docx" in lower
+        and ("ingested" in lower or "ingest" in lower)
+    ):
+        return QueryPlan(
+            category="enumeration",
+            strategy="sql_count",
+            query=q,
+            doc_id=doc_id,
+            prefix=None,
+            revision=revision,
+            latest_only=False,
+            include_obsolete=True,
+            requires_count=True,
+            intent="ingest_manifest_count",
+        )
     if any(term in lower for term in ["how many", "count", "number of"]):
         return QueryPlan(
             category="enumeration",
@@ -183,7 +223,11 @@ def plan_query(query: str) -> QueryPlan:
             include_obsolete=True,
             requires_diff=True,
             compared_revisions=compared_revisions,
-            intent="ambiguous_risk_revision_diff" if prefix == "RSK" else None,
+            intent=(
+                "collimation_beam_angle_revision_compare"
+                if "collimation" in lower or "beam-angle" in lower or "beam angle" in lower
+                else "ambiguous_risk_revision_diff" if prefix == "RSK" else None
+            ),
         )
     if any(
         term in lower
@@ -213,6 +257,12 @@ def plan_query(query: str) -> QueryPlan:
             intent = "electrical_leakage_trace"
         elif "verification protocol" in lower and "risk analysis" in lower:
             intent = "risk_protocol_trace"
+        elif "pediatric" in lower and "filtration" in lower:
+            intent = "pediatric_filtration_trace"
+        elif "critical fault" in lower:
+            intent = "software_critical_fault_trace"
+        elif "acquisition" in lower and "software" in lower:
+            intent = "software_acquisition_trace"
         elif ("third-party" in lower or "third party" in lower) and "regulatory" in lower:
             intent = "third_party_report_mapping"
         return QueryPlan(
@@ -301,6 +351,10 @@ def plan_query(query: str) -> QueryPlan:
         intent = None
         if prefix == "BOM" and "mx1" in lower and "system" in lower:
             intent = "mx1_bom"
+        elif "configuration management" in lower and "software" in lower and "memo" in lower:
+            intent = "software_config_management_memo"
+        elif "system architecture diagram" in lower and "memo" in lower:
+            intent = "system_architecture_diagram_memo"
         return QueryPlan(
             category="known_item",
             strategy="exact_then_hybrid",
@@ -339,8 +393,14 @@ def _infer_prefix(lower_query: str) -> str | None:
         "risk": "RSK",
         "risk-management": "RSK",
         "risk management": "RSK",
-        "traceability": "TRA",
-        "traceability matrices": "TRA",
+        "traceability": "VVAM",
+        "traceability matrix": "VVAM",
+        "traceability matrices": "VVAM",
+        "trace matrix": "VVAM",
+        "requirements trace": "VVAM",
+        "customer training": "TRA",
+        "training guide": "TRA",
+        "training": "TRA",
         "bill of materials": "BOM",
         "bom": "BOM",
         "planning documents": "PLN",

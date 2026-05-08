@@ -70,15 +70,43 @@ def test_query_plan_classifies_core_sample_queries():
 def test_query_plan_sets_specialized_qms_intents():
     cases = {
         "Where is the 510(k) summary for the device?": "510k_summary_location",
+        "Find the signed MX1 software development configuration management memo.": "software_config_management_memo",
+        "Find the MX1 System Architecture Diagram memo.": "system_architecture_diagram_memo",
         "Show me all risk-related documents": "risk_related_inventory",
         "Which verification protocols trace back to the risk analysis?": "risk_protocol_trace",
+        "Trace software critical fault handling from risk controls to verification evidence.": "software_critical_fault_trace",
+        "Trace software acquisition verification across MX1 software system protocol reports.": "software_acquisition_trace",
+        "Trace pediatric filtration from requirements or risk rationale through verification evidence.": "pediatric_filtration_trace",
         "Summarize all design review action items that are still open": "open_design_review_actions",
         "Show me all ECRs filed in the last year and their status": "ecr_last_year_status",
         "Map all third-party test reports to the regulatory requirements they satisfy": "third_party_report_mapping",
         "How many verification protocols have we completed vs. planned?": "verification_completed_vs_planned",
+        "How many traceability matrices are in the corpus?": "traceability_matrix_count",
+        "How many non-empty DOCX records were ingested after ignoring empty documents?": "ingest_manifest_count",
     }
     for query, intent in cases.items():
         assert plan_query(query).intent == intent
+
+
+def test_query_plan_traceability_matrices_use_vvam_not_training():
+    plan = plan_query("How many traceability matrices are in the corpus?")
+    assert plan.category == "enumeration"
+    assert plan.strategy == "sql_count"
+    assert plan.prefix == "VVAM"
+    assert plan.latest_only is True
+    assert plan.include_obsolete is False
+    assert plan.requires_count is True
+
+
+def test_query_plan_routes_topical_revision_compare():
+    plan = plan_query(
+        "Compare Rev B and Rev C records for collimation or beam-angle verification if both are present."
+    )
+    assert plan.category == "revision_diff"
+    assert plan.strategy == "revision_diff"
+    assert plan.include_obsolete is True
+    assert plan.compared_revisions == ("B", "C")
+    assert plan.intent == "collimation_beam_angle_revision_compare"
 
 
 def test_query_plan_routes_revision_inventory_to_sql():

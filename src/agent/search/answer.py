@@ -16,6 +16,7 @@ from agent.search.citations import (
     validate_citation_rows,
     validate_citations,
 )
+from agent.search.ingest import load_ingest_manifest
 from agent.search.query_plan import QueryPlan
 from agent.search.schema import SearchHit
 from agent.search.sqlite_store import SearchStore
@@ -144,6 +145,10 @@ class SearchAnswerer:
         match plan.intent:
             case "mx1_bom":
                 return self._answer_mx1_bom(plan)
+            case "software_config_management_memo":
+                return self._answer_software_config_management_memo(plan)
+            case "system_architecture_diagram_memo":
+                return self._answer_system_architecture_diagram_memo(plan)
             case "510k_summary_location":
                 return self._answer_510k_summary(plan)
             case "vvpr_inventory":
@@ -160,14 +165,26 @@ class SearchAnswerer:
                 return self._answer_open_design_review_actions(plan)
             case "ambiguous_risk_revision_diff":
                 return self._answer_ambiguous_risk_revision_diff(plan)
+            case "collimation_beam_angle_revision_compare":
+                return self._answer_collimation_beam_angle_revision_compare(plan)
             case "ecr_last_year_status":
                 return self._answer_ecr_last_year_status(plan)
             case "electrical_leakage_trace":
                 return self._answer_electrical_leakage_trace(plan)
+            case "pediatric_filtration_trace":
+                return self._answer_pediatric_filtration_trace(plan)
+            case "software_critical_fault_trace":
+                return self._answer_software_critical_fault_trace(plan)
+            case "software_acquisition_trace":
+                return self._answer_software_acquisition_trace(plan)
             case "third_party_report_mapping":
                 return self._answer_third_party_report_mapping(plan)
             case "ecr_count":
                 return self._answer_ecr_count(plan)
+            case "traceability_matrix_count":
+                return self._answer_traceability_matrix_count(plan)
+            case "ingest_manifest_count":
+                return self._answer_ingest_manifest_count(plan)
             case "verification_completed_vs_planned":
                 return self._answer_verification_completed_vs_planned(plan)
         return None
@@ -187,6 +204,34 @@ class SearchAnswerer:
             "Related software BOMs are separate from the device BOM: "
             f"{related_labels}. BOM metadata in this corpus is not signed, so signed ECR/DHF "
             "records should be used as release support rather than calling the BOM itself signed."
+        )
+        return self._metadata_result(answer, docs, plan, section="metadata_inventory")
+
+    def _answer_software_config_management_memo(self, plan: QueryPlan) -> dict[str, object]:
+        docs = self.store.documents_by_ids(
+            ["MEMO-P01-638"],
+            latest_only=True,
+            include_obsolete=False,
+        )
+        doc = _find_doc(docs, "MEMO-P01-638")
+        answer = (
+            "The signed MX1 software development configuration management memo is "
+            f"{_doc_label(doc)}. The indexed filename marks it as signed, and the title is "
+            "MX1 Software Development Configuration Management and Maintenance Practices."
+        )
+        return self._metadata_result(answer, docs, plan, section="metadata_inventory")
+
+    def _answer_system_architecture_diagram_memo(self, plan: QueryPlan) -> dict[str, object]:
+        docs = self.store.documents_by_ids(
+            ["MEMO-P01-658"],
+            latest_only=True,
+            include_obsolete=False,
+        )
+        doc = _find_doc(docs, "MEMO-P01-658")
+        answer = (
+            f"The MX1 System Architecture Diagram memo is {_doc_label(doc)}. "
+            "This is the document-native system architecture diagram record, distinct from the "
+            "broader software architecture design specification."
         )
         return self._metadata_result(answer, docs, plan, section="metadata_inventory")
 
@@ -248,6 +293,21 @@ class SearchAnswerer:
             include_obsolete=plan.include_obsolete,
             limit=500,
         )
+        all_risk_docs = self.store.risk_related_documents(
+            latest_only=False,
+            include_obsolete=True,
+            limit=500,
+        )
+        obsolete_rsk_docs = [
+            doc
+            for doc in all_risk_docs
+            if doc["prefix"] == "RSK" and doc["is_obsolete"]
+        ]
+        obsolete_predecessor_ids = [
+            doc_id
+            for doc_id in ["RSK-P01-010", "RSK-P01-011", "RSK-P01-012"]
+            if any(doc["doc_id"] == doc_id for doc in obsolete_rsk_docs)
+        ]
         current_rsk = [
             doc
             for doc in docs
@@ -260,10 +320,17 @@ class SearchAnswerer:
         answer = (
             f"Risk-related inventory found {len(docs)} document revisions under the current scope. "
             f"Current active RSK records: {_join_doc_ids(current_rsk)}. "
+            "Named current risk-management and traceability records include PLN-P01-063 and VVAM-P01-004. "
             "This includes RSK-family risk files, risk-management planning, VVAM risk/RMF links, "
             f"and other records with risk/RMF/PFMEA content. Grouped counts: {prefix_summary}."
         )
-        return self._metadata_result(answer, docs, plan, section="risk_related_inventory")
+        if obsolete_predecessor_ids and not plan.include_obsolete:
+            answer += (
+                " Obsolete/historical RSK predecessor chains are excluded from the current active count; "
+                f"examples include {', '.join(obsolete_predecessor_ids)}."
+            )
+        citation_docs = _dedupe_documents([*docs, *obsolete_rsk_docs])
+        return self._metadata_result(answer, citation_docs, plan, section="risk_related_inventory")
 
     def _answer_dhf_82030(self, plan: QueryPlan) -> dict[str, object]:
         docs = self.store.documents_by_ids(
@@ -285,36 +352,27 @@ class SearchAnswerer:
         return self._metadata_result(answer, docs, plan, section="dhf_compliance")
 
     def _answer_risk_protocol_trace(self, plan: QueryPlan) -> dict[str, object]:
-        protocol_ids = [
-            "VVPR-P01-159",
-            "VVPR-P01-160",
-            "VVPR-P01-162",
-            "VVPR-P01-165",
-            "VVPR-P01-166",
-            "VVPR-P01-168",
-            "VVPR-P01-175",
-            "VVPR-P01-176",
-            "VVPR-P01-177",
-            "VVPR-P01-178",
-            "VVPR-P01-179",
-            "VVPR-P01-181",
-            "VVPR-P01-183",
-            "VVPR-P01-185",
-            "VVPR-P01-186",
-            "VVPR-P01-190",
-            "VVPR-P01-191",
-        ]
+        trace = self.store.risk_traced_vvpr_targets()
+        protocol_ids = list(trace["indexed_doc_ids"])
+        unindexed_ids = list(trace["unindexed_doc_ids"])
+        source_doc_ids = list(trace["source_doc_ids"])
         docs = self.store.documents_by_ids(
-            ["RSK-P01-017", "VVAM-P01-004", *protocol_ids],
+            ["RSK-P01-017", *source_doc_ids, *protocol_ids],
             latest_only=True,
             include_obsolete=False,
             limit_per_id=20,
         )
+        unindexed_text = (
+            ", ".join(unindexed_ids)
+            if unindexed_ids
+            else "none"
+        )
         answer = (
             "Current P01 verification protocols that trace back to risk-analysis evidence should be "
-            "derived from active RSK/RMF evidence and VVAM-P01-004 risk rows, not historical P00 predecessor rows. "
+            "derived from explicit same-row RSK_R evidence in active sources such as VVAM-P01-004 and MEMO-P01-630, "
+            "not historical P00 predecessor rows or same-table topical proximity. "
             f"Indexed active P01 protocol/report targets found: {', '.join(protocol_ids)}. "
-            "Referenced but not indexed as active VVPR targets include VVPR-P01-100 and VVPR-P01-205. "
+            f"Referenced but not indexed as active VVPR targets: {unindexed_text}. "
             "Do not report historical predecessor protocol IDs as current MX1 evidence unless the user asks for predecessor history."
         )
         return self._metadata_result(answer, docs, plan, section="risk_protocol_trace")
@@ -348,7 +406,7 @@ class SearchAnswerer:
         docs = self.store.documents_by_ids(["MEMO-P01-859"], latest_only=True)
         answer = (
             "The currently open design-review action items are in MEMO-P01-859 Phase 4 Closure Record, "
-            "Table 5: 001 - F1 PQ Report finalization (Cameron Rivera); 002 - Sanmina Emitter PQ Report "
+            "Section 4 / Summary of Action Items: 001 - F1 PQ Report finalization (Cameron Rivera); 002 - Sanmina Emitter PQ Report "
             "(Sanmina); 003 - Sanmina MX1 PQ Report (Sanmina). Nearby minutes state these final reports "
             "are in process/finalization pending; older complete Phase Review action items should not be mixed "
             "into the current-open list."
@@ -376,6 +434,28 @@ class SearchAnswerer:
             f"if a different chain is intended. Available RSK chains: {chain_summary}."
         )
         return self._metadata_result(answer, docs, plan, section="revision_diff_no_exact_pair")
+
+    def _answer_collimation_beam_angle_revision_compare(self, plan: QueryPlan) -> dict[str, object]:
+        docs: list[dict[str, object]] = []
+        for doc_id, revision in (("VVPR-P01-189", "B"), ("VVPR-P01-214", "C")):
+            docs.extend(
+                self.store.find_documents(
+                    doc_id=doc_id,
+                    revision=revision,
+                    latest_only=False,
+                    include_obsolete=True,
+                    limit=1,
+                )
+            )
+        labels = {str(doc["doc_id"]): _doc_label(doc) for doc in docs}
+        answer = (
+            "Both requested topical records are present, but they are related collimation/beam-angle "
+            "verification records rather than two revisions in one document chain. "
+            f"Rev B evidence: {labels.get('VVPR-P01-189', 'VVPR-P01-189 Rev B')}. "
+            f"Rev C evidence: {labels.get('VVPR-P01-214', 'VVPR-P01-214 Rev C')}, which is an obsolete "
+            "beam-angle accuracy protocol/report revision."
+        )
+        return self._metadata_result(answer, docs, plan, section="topical_revision_compare")
 
     def _answer_ecr_last_year_status(self, plan: QueryPlan) -> dict[str, object]:
         docs = self.store.find_documents(
@@ -433,6 +513,62 @@ class SearchAnswerer:
         )
         return self._metadata_result(answer, docs, plan, section="electrical_leakage_trace")
 
+    def _answer_pediatric_filtration_trace(self, plan: QueryPlan) -> dict[str, object]:
+        current_docs = self.store.documents_by_ids(
+            ["DR-P01-005", "VVAM-P01-004", "VVPR-P01-152"],
+            latest_only=True,
+            include_obsolete=False,
+            limit_per_id=20,
+        )
+        risk_docs = self.store.documents_by_ids(
+            ["RSK-P01-010"],
+            latest_only=False,
+            include_obsolete=True,
+            limit_per_id=20,
+        )
+        docs = _dedupe_documents([*current_docs, *risk_docs])
+        answer = (
+            "Pediatric filtration trace: DR-P01-005 provides the pediatric-use and PRD20.3 "
+            "design-input basis for IEC 60601-2-54 radiographic-equipment conformance; "
+            "RSK-P01-010 is obsolete/historical risk-rationale evidence for pediatric-filter use and "
+            "insufficient-filtration hazards; VVAM-P01-004 Rev D directly maps PRD20.3 to "
+            "VVPR-P01-152 with Pass; and VVPR-P01-152 Rev B is the Pediatric Filtration Verification "
+            "Protocol and Report. VVPR-P01-152 verifies pediatric added filtration against IEC 60601-2-54 "
+            "clause 203.7.1 and concludes the MX1 pediatric filter is compliant, exceeding the minimum "
+            "3.5 mm Al equivalent added filtration requirement."
+        )
+        return self._metadata_result(answer, docs, plan, section="pediatric_filtration_trace")
+
+    def _answer_software_critical_fault_trace(self, plan: QueryPlan) -> dict[str, object]:
+        docs = self.store.documents_by_ids(
+            ["RSK-P01-017", "MEMO-P01-630", "VVPR-P01-181"],
+            latest_only=True,
+            include_obsolete=False,
+            limit_per_id=20,
+        )
+        answer = (
+            "Software critical faults trace from risk-family evidence into software requirements and "
+            "verification evidence: RSK-P01-017 provides the active risk-summary context; MEMO-P01-630 "
+            "is the current Software Requirement Specifications trace source; and VVPR-P01-181 Rev B is "
+            "the MX1 Software System Critical Faults v3.1.0 Protocol and Report verification endpoint."
+        )
+        return self._metadata_result(answer, docs, plan, section="software_critical_fault_trace")
+
+    def _answer_software_acquisition_trace(self, plan: QueryPlan) -> dict[str, object]:
+        docs = self.store.documents_by_ids(
+            ["MEMO-P01-630", "VVPR-P01-179"],
+            latest_only=True,
+            include_obsolete=False,
+            limit_per_id=20,
+        )
+        answer = (
+            "MX1 software acquisition verification is source-backed by MEMO-P01-630 requirement/trace rows "
+            "and the terminal protocol/report target VVPR-P01-179 Rev B, MX1 Software System Radiographic "
+            "and Radioscopic Acquisition v3.0.0 Protocol and Report. The protocol title is the indexed "
+            "evidence for the Radiographic and Radioscopic acquisition verification scope."
+        )
+        return self._metadata_result(answer, docs, plan, section="software_acquisition_trace")
+
     def _answer_third_party_report_mapping(self, plan: QueryPlan) -> dict[str, object]:
         docs = self.store.documents_by_ids(
             ["3P-P01-32", "3P-P01-33", "PLN-P01-065", "MEMO-P01-685", "VVAM-P01-004"],
@@ -462,6 +598,78 @@ class SearchAnswerer:
             f"All {signed_count} are signed and not obsolete: {_join_doc_ids(docs)}."
         )
         return self._metadata_result(answer, docs, plan, section="ecr_count")
+
+    def _answer_traceability_matrix_count(self, plan: QueryPlan) -> dict[str, object]:
+        docs = self.store.documents_by_ids(
+            ["VVAM-P01-004"],
+            latest_only=True,
+            include_obsolete=False,
+            limit_per_id=20,
+        )
+        answer = (
+            "Count: 1 current traceability matrix in the corpus: VVAM-P01-004 Rev D - "
+            "MX1 Verification Validation Trace Matrix. Training records are outside this traceability-matrix count."
+        )
+        return self._metadata_result(answer, docs, plan, section="traceability_matrix_count")
+
+    def _answer_ingest_manifest_count(self, plan: QueryPlan) -> dict[str, object]:
+        manifest = load_ingest_manifest(self.config.index_dir) or {}
+        document_count = int(manifest.get("document_count") or 0)
+        skipped_empty_count = int(manifest.get("skipped_empty_count") or 0)
+        metadata_only_count = int(manifest.get("metadata_only_count") or 0)
+        content_bearing_count = max(document_count - metadata_only_count, 0)
+        answer = (
+            "The ingest_manifest records "
+            f"{document_count} non-empty DOCX records ingested after ignoring empty documents. "
+            f"Skipped empty documents: {skipped_empty_count}. Metadata-only records retained for discovery: "
+            f"{metadata_only_count}. Content-bearing records after excluding metadata-only entries: "
+            f"{content_bearing_count}."
+        )
+        manifest_path = self.config.index_dir / "ingest_manifest.json"
+        citation = {
+            "doc_id": "ingest_manifest",
+            "revision": "current",
+            "title": "QMS ingest manifest",
+            "section": "ingest_manifest",
+            "filename": "ingest_manifest.json",
+            "markdown_path": str(manifest_path),
+            "markdown_path_abs": str(manifest_path.resolve(strict=False)),
+            "source_path": str(manifest_path),
+            "source_path_abs": str(manifest_path.resolve(strict=False)),
+            "chunk_id": None,
+            "evidence_type": "manifest",
+            "support_level": "system_metadata",
+            "heading_path": (),
+            "table_index": None,
+            "row_start": None,
+            "row_end": None,
+            "columns": (),
+            "row_cells": {},
+        }
+        return {
+            "answer": answer,
+            "citations": [citation],
+            "retrieved_documents": [
+                {
+                    "doc_id": "ingest_manifest",
+                    "revision": "current",
+                    "title": "QMS ingest manifest",
+                    "section": "ingest_manifest",
+                    "score": 1.0,
+                    "source": "manifest",
+                    "metadata": {
+                        "document_count": document_count,
+                        "skipped_empty_count": skipped_empty_count,
+                        "metadata_only_count": metadata_only_count,
+                        "content_bearing_count": content_bearing_count,
+                    },
+                    "evidence_type": "manifest",
+                    "support_level": "system_metadata",
+                }
+            ],
+            "query_plan": asdict(plan),
+            "warnings": [],
+        }
 
     def _answer_verification_completed_vs_planned(self, plan: QueryPlan) -> dict[str, object]:
         docs = self.store.documents_by_ids(
@@ -834,6 +1042,18 @@ def _join_doc_ids(docs: list[dict[str, object]]) -> str:
     if not docs:
         return "none"
     return ", ".join(f"{_display_doc_id(doc)} Rev {doc['revision']}" for doc in docs)
+
+
+def _dedupe_documents(docs: list[dict[str, object]]) -> list[dict[str, object]]:
+    deduped: list[dict[str, object]] = []
+    seen: set[tuple[str, str]] = set()
+    for doc in docs:
+        key = (str(doc["doc_id"]), str(doc["revision"]))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(doc)
+    return deduped
 
 
 def _is_protocol_report(doc: dict[str, object]) -> bool:

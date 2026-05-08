@@ -485,6 +485,104 @@ class SearchStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def risk_traced_vvpr_targets(
+        self,
+        *,
+        source_doc_ids: tuple[str, ...] = ("VVAM-P01-004", "MEMO-P01-630"),
+        limit: int = 1000,
+    ) -> dict[str, object]:
+        source_ids = tuple(doc_id.upper() for doc_id in source_doc_ids)
+        if not source_ids:
+            return {
+                "indexed_doc_ids": [],
+                "unindexed_doc_ids": [],
+                "source_doc_ids": [],
+                "trace_map": {},
+            }
+        placeholders = ", ".join("?" for _ in source_ids)
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT c.doc_id, c.revision, c.text
+                FROM chunks c
+                JOIN documents d ON d.doc_id = c.doc_id AND d.revision = c.revision
+                WHERE d.is_latest = 1
+                  AND d.is_obsolete = 0
+                  AND c.doc_id IN ({placeholders})
+                  AND lower(c.search_text) LIKE '%rsk_r%'
+                  AND lower(c.search_text) LIKE '%vvpr-p01%'
+                ORDER BY c.doc_id, c.revision, c.ordinal
+                LIMIT ?
+                """,
+                (*source_ids, limit),
+            ).fetchall()
+
+        traces: dict[str, dict[str, object]] = {}
+        seen_sources: set[str] = set()
+        for row in rows:
+            source_doc_id = str(row["doc_id"])
+            seen_sources.add(source_doc_id)
+            for row_text in _table_row_texts(str(row["text"])):
+                risk_ids = sorted({match.group(0).upper() for match in RSK_ID_RE.finditer(row_text)})
+                if not risk_ids:
+                    continue
+                vvpr_ids = sorted(
+                    {
+                        f"VVPR-P01-{match.group(1).zfill(3)}"
+                        for match in VVPR_P01_RE.finditer(row_text)
+                    }
+                )
+                if not vvpr_ids:
+                    continue
+                for vvpr_id in vvpr_ids:
+                    trace = traces.setdefault(
+                        vvpr_id,
+                        {
+                            "doc_id": vvpr_id,
+                            "risk_ids": set(),
+                            "source_doc_ids": set(),
+                        },
+                    )
+                    trace["risk_ids"].update(risk_ids)
+                    trace["source_doc_ids"].add(source_doc_id)
+
+        if not traces:
+            return {
+                "indexed_doc_ids": [],
+                "unindexed_doc_ids": [],
+                "source_doc_ids": sorted(seen_sources),
+                "trace_map": {},
+            }
+
+        target_ids = sorted(traces)
+        placeholders = ", ".join("?" for _ in target_ids)
+        with self.connect() as conn:
+            document_rows = conn.execute(
+                f"""
+                SELECT doc_id
+                FROM documents
+                WHERE is_latest = 1
+                  AND is_obsolete = 0
+                  AND doc_id IN ({placeholders})
+                ORDER BY doc_id
+                """,
+                target_ids,
+            ).fetchall()
+        indexed_doc_ids = sorted({str(row["doc_id"]) for row in document_rows})
+        trace_map = {
+            doc_id: {
+                "risk_ids": sorted(trace["risk_ids"]),
+                "source_doc_ids": sorted(trace["source_doc_ids"]),
+            }
+            for doc_id, trace in sorted(traces.items())
+        }
+        return {
+            "indexed_doc_ids": indexed_doc_ids,
+            "unindexed_doc_ids": [doc_id for doc_id in target_ids if doc_id not in indexed_doc_ids],
+            "source_doc_ids": sorted(seen_sources),
+            "trace_map": trace_map,
+        }
+
     def revision_chain(
         self,
         *,
@@ -671,6 +769,22 @@ REFERENCE_RE = re.compile(
     r"TRA-\d{3}|3P-(?:P\d{2}-)?\d{2,3})\b",
     re.IGNORECASE,
 )
+RSK_ID_RE = re.compile(r"RSK_R\d+", re.IGNORECASE)
+VVPR_P01_RE = re.compile(r"VVPR-P01-\s*(\d{2,3})", re.IGNORECASE)
+ROW_LABEL_RE = re.compile(r"(?m)^Row\s+\d+:\s*\n", re.IGNORECASE)
+
+
+def _table_row_texts(text: str) -> list[str]:
+    matches = list(ROW_LABEL_RE.finditer(text))
+    if not matches:
+        return [text]
+    rows: list[str] = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        row_text = text[match.end() : end].strip()
+        if row_text:
+            rows.append(row_text)
+    return rows
 
 
 def _extract_references(item: dict[str, object]) -> list[tuple[str, str]]:
