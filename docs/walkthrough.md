@@ -19,7 +19,7 @@ reviewers do not need to pay to regenerate embeddings. SQLite/FTS and normalized
 text artifacts are cheap and should be regenerated locally from the included
 corpus.
 
-Download the OpenAI vector bundle when it is missing:
+Use the provided OpenAI vector bundle:
 
 ```bash
 INDEX_DIR="${QMS_INDEX_DIR:-.data/qms-index}"
@@ -56,11 +56,11 @@ if [ ! -f "$INDEX_DIR/qms.sqlite" ] || [ ! -f "$INDEX_DIR/ingest_manifest.json" 
 fi
 
 if [ "$VECTOR_BUNDLE_READY" = false ]; then
-  echo "OpenAI vector bundle is unavailable; rebuilding embeddings with OpenAI."
-  uv run build-qms-index
-else
-  echo "Using downloaded OpenAI vector bundle; skipping embedding rebuild."
+  echo "OpenAI vector bundle is unavailable. Download it with the command above, or see the optional section at the bottom to generate your own vectors."
+  exit 1
 fi
+
+echo "Using provided OpenAI vector bundle; skipping embedding rebuild."
 
 uv run search-status --tasks TASKS.md --index-dir "$INDEX_DIR" --openai-state .data/openai/vector_store_state.json
 ```
@@ -72,20 +72,9 @@ OpenAI vectors, run only ingestion:
 uv run ingest-qms
 ```
 
-For an explicit full vector rebuild, use this only when intentionally spending a
-new OpenAI embedding pass:
-
-```bash
-INDEX_DIR="${QMS_INDEX_DIR:-.data/qms-index}"
-rm -f "$INDEX_DIR/manifest.json" "$INDEX_DIR/vectors.npy" "$INDEX_DIR/vector_metadata.json"
-uv run ingest-qms
-uv run build-qms-index
-```
-
-`uv run build-qms-index` is the OpenAI embedding build and requires
-`OPENAI_API_KEY` to be available through `.env` or the environment. Fresh clones
-with the downloaded vector bundle should not need to run it. Do not
-`source .env`; the Python entry points load it directly.
+Fresh clones using the downloaded vector bundle should not run
+`uv run build-qms-index`. That command makes a new OpenAI embedding pass and is
+only for reviewers who intentionally choose not to use the provided vectors.
 
 Expected output should include:
 
@@ -110,17 +99,13 @@ Expected output should include:
   answer-time neighbor chunk.
 - Extraction warnings.
 
+The setup above uses the provided OpenAI vector bundle. It does not spend a new
+embedding pass.
+
 Inspect status later without rebuilding:
 
 ```bash
 uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
-```
-
-Deterministic smoke build, only when live embeddings are intentionally avoided:
-
-```bash
-uv run ingest-qms
-uv run build-qms-index --hash-embeddings
 ```
 
 The OpenAI vector bundle must remain the quality baseline for production-style
@@ -816,3 +801,25 @@ If you write a manual note in addition to the generated reports, create
 - Query expansion and retrieval trace summary, including backend, required
   sources found, partial-success warnings, and any references followed.
 - Known failures or degraded modes.
+
+## 7. Optional: Generate Your Own Vector Embeddings
+
+Use this only if you intentionally do not want to use the provided vector
+embeddings, or if you changed extraction/chunking/embedding settings and need a
+new vector baseline. This path requires `OPENAI_API_KEY` and makes a paid OpenAI
+embedding request for the whole corpus.
+
+```bash
+INDEX_DIR="${QMS_INDEX_DIR:-.data/qms-index}"
+rm -f "$INDEX_DIR/manifest.json" "$INDEX_DIR/vectors.npy" "$INDEX_DIR/vector_metadata.json"
+uv run ingest-qms
+uv run build-qms-index
+uv run search-status --tasks TASKS.md --index-dir "$INDEX_DIR" --openai-state .data/openai/vector_store_state.json
+```
+
+For offline smoke tests only, not the quality baseline:
+
+```bash
+uv run ingest-qms
+uv run build-qms-index --hash-embeddings
+```
