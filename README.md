@@ -118,8 +118,16 @@ flowchart LR
 Important build/status commands:
 
 ```bash
+# Download the expensive OpenAI vector bundle from the GitHub Release asset.
+curl -L https://github.com/andrewsohrabi/simple-agent-public/releases/download/qms-openai-vector-bundle-2026-05-07/qms-openai-vector-bundle-2026-05-07.tar.gz -o /tmp/qms-openai-vector-bundle-2026-05-07.tar.gz
+tar -xzf /tmp/qms-openai-vector-bundle-2026-05-07.tar.gz
+
+# Regenerate cheap local SQLite/FTS and normalized text artifacts.
 uv run ingest-qms
+
+# Only run this when the downloaded vector bundle is unavailable or intentionally being refreshed.
 uv run build-qms-index
+
 uv run build-qms-index --hash-embeddings   # deterministic local smoke index
 uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
 uv run serve
@@ -204,13 +212,17 @@ Current indexed baseline:
 
 - `189` real DOCX records represented after ignoring Mac artifacts.
 - `24` sparse/empty-body documents retained as metadata-only records.
-- `7,778` token-aware chunks in the local index.
+- `17,651` token-aware chunks in the OpenAI vector bundle.
 - Local vectors are OpenAI `text-embedding-3-large` embeddings at `3072`
-  dimensions with `embedding_provider=openai`.
-- Hosted OpenAI File Search state is synced for the same corpus hash with `189`
-  uploaded normalized Markdown files.
+  dimensions with `embedding_provider=openai`, distributed as a GitHub Release
+  asset containing `.data/qms-index/vectors.npy` and
+  `.data/qms-index/vector_metadata.json`.
+- SQLite/FTS artifacts are regenerated locally with `uv run ingest-qms`; they
+  are intentionally not committed.
+- Hosted OpenAI File Search state can be synced for the same corpus hash with
+  `189` uploaded normalized Markdown files, but hosted state remains local-only.
 - SQLite includes `revisions` and `doc_references`; current status reports
-  `2,355` extracted references.
+  `4,446` extracted references after local ingest.
 - Reranking is implemented with an optional `sentence_transformers.CrossEncoder`
   backend for `Qwen/Qwen3-Reranker-4B`. This local environment does not have the
   native/model dependencies installed, so `/stats` correctly reports

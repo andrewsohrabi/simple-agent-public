@@ -49,16 +49,17 @@ Symptoms:
 
 Fix:
 
-- Treat the current index artifacts as the OpenAI indexed baseline: `189` DOCX
-  records, `24` metadata-only records, `7,778` chunks,
-  `embedding_provider=openai`, synced hosted OpenAI File Search state, and
-  SQLite revision/reference tables.
-- Treat the current demo as OpenAI-indexed, hosted-synced, SQLite-backed, and
-  desktop-browser verified. The optional Qwen CrossEncoder reranker path is
-  implemented, but this sandbox reports the deterministic fallback until the
-  native dependencies and model cache are provisioned. `gpt-5.5` answer
-  synthesis is implemented with citation-label validation and deterministic
-  fallback.
+- Treat the downloaded OpenAI vector bundle as the dense indexed baseline: `189`
+  DOCX records, `24` metadata-only records, `17,651` chunks,
+  `embedding_provider=openai`, `text-embedding-3-large`, and 3072 dimensions.
+- Regenerate SQLite/FTS locally with `uv run ingest-qms`; do not expect
+  `qms.sqlite` or normalized Markdown to be committed. Hosted OpenAI File Search
+  state is local-only under `.data/openai/`.
+- Treat the current demo as OpenAI-vector-indexed and SQLite-backed after local
+  ingest. The optional Qwen CrossEncoder reranker path is implemented, but this
+  sandbox reports the deterministic fallback until the native dependencies and
+  model cache are provisioned. `gpt-5.5` answer synthesis is implemented with
+  citation-label validation and deterministic fallback.
 - In the Codex macOS sandbox, command-line Playwright can fail with Chromium
   `MachPortRendezvousServer ... Permission denied`. `scripts/check.sh` skips
   only that exact sandbox signature after Python tests, status, backend startup,

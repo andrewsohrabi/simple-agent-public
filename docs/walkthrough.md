@@ -13,39 +13,78 @@ uv run chat --qms-search --mode hybrid --limit 8
 ## 1. Build Or Verify The Current OpenAI Index
 
 Run this before the sample queries if you are reviewing from a fresh clone or
-any environment where the local QMS index may not already be present. It checks
-for the core processed artifacts, then runs the full data-processing path: DOCX
-ingest, metadata normalization, chunking, OpenAI vector embeddings, SQLite FTS,
-and the FAISS-compatible vector store.
+any environment where the local QMS index may not already be present. The
+expensive OpenAI vector bundle is published as a GitHub Release asset so
+reviewers do not need to pay to regenerate embeddings. SQLite/FTS and normalized
+text artifacts are cheap and should be regenerated locally from the included
+corpus.
+
+Download the OpenAI vector bundle when it is missing:
+
+```bash
+INDEX_DIR="${QMS_INDEX_DIR:-.data/qms-index}"
+VECTOR_BUNDLE_URL="https://github.com/andrewsohrabi/simple-agent-public/releases/download/qms-openai-vector-bundle-2026-05-07/qms-openai-vector-bundle-2026-05-07.tar.gz"
+VECTOR_BUNDLE_SHA256="a0db890ffa3723f43ec0308c8745c17efec7444efa5d0dab81b4fcd451984528"
+VECTOR_BUNDLE_TGZ="/tmp/qms-openai-vector-bundle-2026-05-07.tar.gz"
+
+if [ ! -f "$INDEX_DIR/manifest.json" ] \
+  || [ ! -f "$INDEX_DIR/vector_metadata.json" ] \
+  || [ ! -f "$INDEX_DIR/vectors.npy" ]; then
+  echo "Downloading OpenAI vector bundle."
+  curl -L "$VECTOR_BUNDLE_URL" -o "$VECTOR_BUNDLE_TGZ"
+  printf '%s  %s\n' "$VECTOR_BUNDLE_SHA256" "$VECTOR_BUNDLE_TGZ" | shasum -a 256 -c -
+  tar -xzf "$VECTOR_BUNDLE_TGZ"
+fi
+```
+
+Then build any missing local text-search artifacts and verify the index:
 
 ```bash
 INDEX_DIR="${QMS_INDEX_DIR:-.data/qms-index}"
 
-if [ ! -f "$INDEX_DIR/manifest.json" ] \
-  || [ ! -f "$INDEX_DIR/qms.sqlite" ] \
-  || [ ! -f "$INDEX_DIR/vector_metadata.json" ] \
-  || [ ! -f "$INDEX_DIR/vectors.npy" ]; then
-  echo "QMS index artifacts are missing; rebuilding from source corpus."
-  rm -rf "$INDEX_DIR"
+VECTOR_BUNDLE_READY=false
+if [ -f "$INDEX_DIR/manifest.json" ] \
+  && [ -f "$INDEX_DIR/vector_metadata.json" ] \
+  && [ -f "$INDEX_DIR/vectors.npy" ] \
+  && [ "$(wc -c < "$INDEX_DIR/vectors.npy")" -gt 1000000 ]; then
+  VECTOR_BUNDLE_READY=true
+fi
+
+if [ ! -f "$INDEX_DIR/qms.sqlite" ] || [ ! -f "$INDEX_DIR/ingest_manifest.json" ]; then
+  echo "Rebuilding SQLite/FTS and normalized text artifacts from source corpus."
   uv run ingest-qms
+fi
+
+if [ "$VECTOR_BUNDLE_READY" = false ]; then
+  echo "OpenAI vector bundle is unavailable; rebuilding embeddings with OpenAI."
   uv run build-qms-index
 else
-  echo "QMS index artifacts already exist at $INDEX_DIR; skipping rebuild."
+  echo "Using downloaded OpenAI vector bundle; skipping embedding rebuild."
 fi
 
 uv run search-status --tasks TASKS.md --index-dir "$INDEX_DIR" --openai-state .data/openai/vector_store_state.json
 ```
 
-For an explicit rebuild even when artifacts already exist:
+For an explicit SQLite/FTS text-index rebuild while keeping the downloaded
+OpenAI vectors, run only ingestion:
 
 ```bash
-rm -rf "${QMS_INDEX_DIR:-.data/qms-index}"
+uv run ingest-qms
+```
+
+For an explicit full vector rebuild, use this only when intentionally spending a
+new OpenAI embedding pass:
+
+```bash
+INDEX_DIR="${QMS_INDEX_DIR:-.data/qms-index}"
+rm -f "$INDEX_DIR/manifest.json" "$INDEX_DIR/vectors.npy" "$INDEX_DIR/vector_metadata.json"
 uv run ingest-qms
 uv run build-qms-index
 ```
 
 `uv run build-qms-index` is the OpenAI embedding build and requires
-`OPENAI_API_KEY` to be available through `.env` or the environment. Do not
+`OPENAI_API_KEY` to be available through `.env` or the environment. Fresh clones
+with the downloaded vector bundle should not need to run it. Do not
 `source .env`; the Python entry points load it directly.
 
 Expected output should include:
@@ -57,10 +96,10 @@ Expected output should include:
 - Embedding dimensions: `3072`.
 - Embedding provider: `openai`.
 - FAISS type: `IndexFlatIP`.
-- SQLite `revisions` and `doc_references`; post-rebuild status reports
-  `4,446` references.
+- SQLite `revisions` and `doc_references`; post-ingest status reports `4,446`
+  references.
 - Hosted File Search status `synced` with `189` files for the current corpus
-  hash.
+  hash when hosted state is available.
 - Vector backend: `faiss` when the optional native package is importable,
   otherwise `numpy_fallback`.
 - Reranker backend: `sentence_transformers_cross_encoder` when the configured
@@ -84,7 +123,8 @@ uv run ingest-qms
 uv run build-qms-index --hash-embeddings
 ```
 
-The OpenAI build must remain the indexed baseline for production-style runs.
+The OpenAI vector bundle must remain the quality baseline for production-style
+runs. Hash embeddings are smoke/test only.
 
 ## Quick Design Summary
 

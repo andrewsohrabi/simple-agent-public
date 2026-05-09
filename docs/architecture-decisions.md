@@ -99,28 +99,38 @@ Verification:
 
 Decision:
 
-- Commit the local review corpus/index artifacts for portability.
-- Keep hosted OpenAI vector-store state and raw trace-style artifacts local-only.
-- Store the committed local artifacts as normal Git blobs for the fork push,
-  because GitHub rejected new LFS object uploads to the public fork.
+- Commit the source corpus artifact for reviewer reproducibility.
+- Publish the expensive OpenAI vector bundle as a GitHub Release asset because
+  GitHub rejected new LFS object uploads to this public fork.
+- Keep SQLite/FTS artifacts, normalized Markdown, hosted OpenAI vector-store
+  state, and raw trace-style artifacts local-generated.
 
 Reasoning:
 
-- Reviewers should be able to inspect and run the local fallback path without
-  rebuilding everything.
-- The largest current artifact, `.data/qms-index/qms.sqlite`, is just under
-  GitHub's 100 MiB per-file hard limit. The vector file and metadata file are
-  also under that limit.
-- The chunking/indexing decisions are not constrained by artifact size; if a
-  future remote allows LFS, these same artifacts can be moved back to LFS.
+- OpenAI embeddings are the costly part of setup, so reviewers should not need
+  to regenerate them just to run the default hybrid search path.
+- SQLite/FTS is cheap and deterministic enough to regenerate with
+  `uv run ingest-qms`; it also keeps the database aligned with the local Python
+  code and platform-specific SQLite behavior.
+- The vector bundle has to keep vectors, vector metadata, and the manifest
+  together because the metadata maps vector rows back to chunks and source IDs.
+- If this work moves to an LFS-enabled upstream branch, the same three-file
+  vector bundle is the right Git LFS payload.
 
 Current artifact state:
 
-- Corpus zip: about 30 MB.
-- Local index directory after the token-aware rebuild: about 278 MB.
-- `.data/qms-index/qms.sqlite`: 104,816,640 bytes.
-- `.data/qms-index/vectors.npy`: 95,576,192 bytes.
-- `.data/qms-index/vector_metadata.json`: 56,602,752 bytes.
+- Corpus zip: about 30 MB, committed as a normal repository file.
+- Release asset: `qms-openai-vector-bundle-2026-05-07.tar.gz`, about 170 MB,
+  SHA256 `a0db890ffa3723f43ec0308c8745c17efec7444efa5d0dab81b4fcd451984528`.
+- OpenAI vector bundle contents:
+  - `.data/qms-index/manifest.json`: small JSON manifest.
+  - `.data/qms-index/vectors.npy`: about 207 MB.
+  - `.data/qms-index/vector_metadata.json`: about 84 MB.
+- Local-generated artifacts:
+  - `.data/qms-index/qms.sqlite`
+  - `.data/qms-index/ingest_manifest.json`
+  - `.data/qms-index/normalized/**`
+  - `.data/openai/**`
 
 ## 2026-05-07 - Initial Character-Chunk Ablation
 
@@ -271,8 +281,9 @@ Decision and implemented fix:
 
 Verification:
 
-- Main rebuild now reports `189` documents, `24` metadata-only documents, and
-  `7,778` chunks.
+- That intermediate rebuild reported `189` documents, `24` metadata-only
+  documents, and `7,778` chunks. The later bounded row/table OpenAI vector
+  bundle reports `17,651` chunks.
 - Targeted tests cover `IFU-MX1` parsing, metadata-only retrieval, and schema
   status.
 
@@ -378,7 +389,7 @@ Observed artifact counts after implementing the token-aware chunker:
 | Real DOCX records | 189 |
 | Skipped empty records | 0 |
 | Metadata-only records | 24 |
-| Token-aware chunks | 7,778 |
+| Token-aware chunks | 17,651 |
 | Embedding dimensions in manifest | 3,072 |
 | FAISS index type in manifest | `IndexFlatIP` |
 
@@ -550,13 +561,14 @@ Interpretation:
 
 Decision:
 
-- Treat the current local vector artifact as the OpenAI indexed baseline:
+- Treat the release vector bundle as the OpenAI indexed baseline:
   `embedding_provider=openai`, `text-embedding-3-large`, 3072 dimensions,
-  normalized `IndexFlatIP` vectors, and 7,778 chunks.
+  normalized `IndexFlatIP` vectors, and 17,651 chunks.
 - Treat hosted OpenAI File Search as synced for the current corpus hash with 189
   normalized Markdown files in `.data/openai/vector_store_state.json`.
-- Treat SQLite revision/reference storage as present; current status reports
-  `revisions` and `doc_references` tables with 2,355 references.
+- Treat SQLite revision/reference storage as local-generated; after
+  `uv run ingest-qms`, current status reports `revisions` and
+  `doc_references` tables with 4,446 references.
 - Keep reranking status explicit: `sentence_transformers_cross_encoder` when the
   Qwen/BAAI CrossEncoder backend is actually active, otherwise
   `deterministic_fallback` with a warning and fallback reason.
@@ -623,9 +635,8 @@ Important caveats:
 
 - The worker's temp matrix used intermediate code and reported `7,730` chunks,
   `7,195` table chunks, `370` prose chunks, and `165` metadata chunks.
-- The main branch index was rebuilt after metadata-only ingestion and IFU parsing
-  fixes; the current committed artifact has `7,778` chunks and `189` metadata
-  chunks.
+- The main branch index was later rebuilt with bounded row/table chunks; the
+  current release vector bundle has `17,651` chunks.
 - Because tables dominate the corpus, changing prose chunk size had little or no
   effect on generated chunks in the matrix.
 

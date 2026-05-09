@@ -28,9 +28,9 @@ node_modules/
 frontend/playwright-report/
 frontend/test-results/
 
-# Generated search artifacts. QMS indexes, vectors, hosted OpenAI state,
-# and raw eval traces remain local-only; rebuild with `uv run ingest-qms`
-# and `uv run build-qms-index`.
+# Generated search artifacts. The OpenAI vector bundle is downloaded from the
+# release asset; SQLite/FTS, hosted OpenAI state, and raw eval traces remain
+# local-only.
 .data/*
 !.data/
 data/generated/

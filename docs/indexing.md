@@ -89,16 +89,21 @@ Build rules:
 
 Current indexed baseline:
 
-- The current local index uses OpenAI `text-embedding-3-large` embeddings at
-  3072 dimensions, records `embedding_provider=openai`, and stores normalized
-  vectors in the `IndexFlatIP` artifact. Runtime status reports
-  `vector_backend=faiss` when native FAISS is installed and `numpy_fallback`
-  otherwise.
+- The current local vector bundle uses OpenAI `text-embedding-3-large`
+  embeddings at 3072 dimensions, records `embedding_provider=openai`, and
+  stores normalized vectors for the `IndexFlatIP` search path. Runtime status
+  reports `vector_backend=faiss` when native FAISS is installed and
+  `numpy_fallback` otherwise.
+- The expensive reusable vector bundle is distributed as a GitHub Release asset
+  containing `.data/qms-index/manifest.json`, `.data/qms-index/vectors.npy`,
+  and `.data/qms-index/vector_metadata.json`.
+- SQLite/FTS artifacts are regenerated locally with `uv run ingest-qms`; do not
+  commit `qms.sqlite`, normalized Markdown, or hosted OpenAI state.
 - The deterministic hash path remains available through
   `build-qms-index --hash-embeddings` for smoke tests and offline regression
   work only.
-- Hosted OpenAI File Search is synced for the same corpus hash and stores local
-  state under `.data/openai/vector_store_state.json`.
+- Hosted OpenAI File Search can be synced for the same corpus hash and stores
+  local state under `.data/openai/vector_store_state.json`.
 - Query and document embeddings must continue to use the same
   provider/model/dimensions.
 
@@ -168,8 +173,9 @@ The app should display manifest data in `GET /index/status` and the frontend
 status panel.
 
 Current SQLite status also includes first-class `revisions` and
-`doc_references` tables. The latest verified status reports 189 documents,
-7,778 chunks, 154 latest documents, 2,355 references, and a current schema.
+`doc_references` tables. After local ingest, the latest verified status reports
+189 documents, 17,651 vector rows/chunks, 154 latest documents, 4,446
+references, and a current schema.
 
 ## Validation
 

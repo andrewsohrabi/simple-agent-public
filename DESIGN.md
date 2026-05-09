@@ -687,8 +687,10 @@ uv run pytest evals/ -v
 Implemented search commands:
 
 ```bash
+curl -L https://github.com/andrewsohrabi/simple-agent-public/releases/download/qms-openai-vector-bundle-2026-05-07/qms-openai-vector-bundle-2026-05-07.tar.gz -o /tmp/qms-openai-vector-bundle-2026-05-07.tar.gz
+tar -xzf /tmp/qms-openai-vector-bundle-2026-05-07.tar.gz
 uv run ingest-qms
-uv run build-qms-index
+uv run build-qms-index  # only when the downloaded OpenAI vector bundle is unavailable or intentionally being rebuilt
 uv run build-qms-index --hash-embeddings
 uv run search-status --tasks TASKS.md --index-dir .data/qms-index --openai-state .data/openai/vector_store_state.json
 uv run search-qms "Find BOM-055 Rev G" --mode hybrid --limit 8
@@ -725,19 +727,22 @@ is the machine-readable mode and `--plain` keeps deterministic text output.
   fewer, and answer-time neighbor expansion. The row cap avoids indexing huge
   trace/risk matrices as tens of thousands of individual vector records while
   preserving exact row/cell citations for audit-sized tables.
-- A rebuilt local index using this schema should report:
+- The expensive OpenAI vector bundle is published as a GitHub Release asset:
+  `.data/qms-index/manifest.json`, `.data/qms-index/vectors.npy`, and
+  `.data/qms-index/vector_metadata.json`. The bundle records
   `embedding_provider=openai`, `text-embedding-3-large`, 3072 dimensions,
-  normalized vectors, and `17,651` chunks. The large generated index files are
-  not pushed through the public fork when they exceed GitHub's normal blob
-  limits; rebuild locally with `ingest-qms` and `build-qms-index`.
-- SQLite includes document, chunk, source-file, ingest-run, revision, and
-  `doc_references` tables; the post-rebuild status for this corpus reports
-  `4,446` references.
+  normalized vectors, and `17,651` chunks.
+- SQLite/FTS is intentionally local-generated because it is cheap to rebuild.
+  Run `uv run ingest-qms` after clone to regenerate `qms.sqlite`, normalized
+  Markdown, document/chunk/source-file tables, revision rows, and
+  `doc_references`; the post-ingest status for this corpus reports `4,446`
+  references.
 - Hosted OpenAI File Search state is synced for the current corpus hash with
   `189` normalized Markdown files.
 - `build-qms-index --hash-embeddings` remains the deterministic local smoke path.
-  `build-qms-index` is the OpenAI build path and is the current indexed
-  baseline.
+  `build-qms-index` is the OpenAI rebuild path when the downloaded vector bundle
+  is unavailable or intentionally being refreshed; the downloaded OpenAI vector
+  bundle is the current indexed baseline.
 - The configured Qwen reranker is not yet the active backend; status currently
   reports `deterministic_fallback`.
 - Deterministic QMS intents are implemented for the current 14-query audit set
