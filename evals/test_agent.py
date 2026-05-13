@@ -66,3 +66,32 @@ def test_agent_multi_turn(agent):
     r2 = agent.invoke({"messages": msgs})
     ai_msg = r2["messages"][-1]
     assert "Alice" in ai_msg.content
+
+
+def test_make_agent_with_explicit_model_ignores_qms_config_validation(monkeypatch):
+    observed = []
+    monkeypatch.setenv("QMS_RUNTIME_ENV", "production")
+    monkeypatch.setenv("QMS_USE_HASH_EMBEDDINGS", "true")
+    monkeypatch.setattr(
+        core, "init_chat_model", lambda model_name: observed.append(model_name) or object()
+    )
+    monkeypatch.setattr(core, "create_deep_agent", lambda **_kwargs: StubAgent())
+
+    make_agent(model_str="anthropic:claude-haiku-4-5-20251001")
+
+    assert observed == ["anthropic:claude-haiku-4-5-20251001"]
+
+
+def test_make_agent_reads_agent_model_without_qms_config_validation(monkeypatch):
+    observed = []
+    monkeypatch.setenv("QMS_RUNTIME_ENV", "production")
+    monkeypatch.setenv("QMS_USE_HASH_EMBEDDINGS", "true")
+    monkeypatch.setenv("AGENT_MODEL", "google_genai:gemini-2.5-flash")
+    monkeypatch.setattr(
+        core, "init_chat_model", lambda model_name: observed.append(model_name) or object()
+    )
+    monkeypatch.setattr(core, "create_deep_agent", lambda **_kwargs: StubAgent())
+
+    make_agent()
+
+    assert observed == ["google_genai:gemini-2.5-flash"]

@@ -1,7 +1,9 @@
+import os
+
 from langchain.chat_models import init_chat_model
 from deepagents import create_deep_agent
 
-from agent.config import load_config
+from agent.config import SearchConfig
 
 
 def _langchain_model_name(model_str: str) -> str:
@@ -11,6 +13,10 @@ def _langchain_model_name(model_str: str) -> str:
     if model_str.startswith(("gpt-", "o1", "o3", "o4")):
         return f"openai:{model_str}"
     return model_str
+
+
+def _default_agent_model() -> str:
+    return os.getenv("AGENT_MODEL") or SearchConfig.agent_model
 
 
 def make_agent(
@@ -29,8 +35,7 @@ def make_agent(
     Returns:
         A compiled LangGraph agent supporting .invoke(), .stream(), .astream().
     """
-    config = load_config()
-    model_name = _langchain_model_name(model_str or config.agent_model)
+    model_name = _langchain_model_name(model_str or _default_agent_model())
     model = init_chat_model(model_name)
     kwargs = {}
     if system_prompt:
