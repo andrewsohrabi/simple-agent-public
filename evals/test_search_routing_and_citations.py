@@ -375,13 +375,47 @@ def test_explicit_obsolete_query_includes_obsolete_records(tmp_path):
     result = service.search("obsolete older bill of materials evidence", mode="local")
 
     assert result["query_plan"]["include_obsolete"] is True
-    assert any(
-        doc["doc_id"] == "BOM-055"
-        and doc["revision"] == "F"
-        and doc["metadata"].get("is_obsolete")
+    assert result["retrieved_documents"]
+    assert all(
+        doc["metadata"].get("is_obsolete")
         for doc in result["retrieved_documents"]
     )
+    assert {
+        (doc["doc_id"], doc["revision"])
+        for doc in result["retrieved_documents"]
+    } == {("BOM-055", "F")}
     assert validate_citation_rows(service.store, result["citations"]) == []
+
+
+def test_obsolete_multi_hop_reference_expansion_keeps_obsolete_targets(tmp_path):
+    service = _service(tmp_path)
+    _insert_document(
+        service.store,
+        doc_id="VVPR-P01-179",
+        revision="A",
+        prefix="VVPR",
+        title="Legacy Verification Protocol",
+        rank=1,
+        latest=False,
+        obsolete=True,
+        text="Legacy target evidence linked only by reference.",
+    )
+
+    result = service.search(
+        "Trace obsolete evidence from the risk analysis through references.",
+        mode="local",
+    )
+
+    assert result["query_plan"]["category"] == "traceability"
+    assert result["retrieved_documents"]
+    assert all(
+        doc["metadata"].get("is_obsolete")
+        for doc in result["retrieved_documents"]
+    )
+    assert ("VVPR-P01-179", "A") in {
+        (doc["doc_id"], doc["revision"])
+        for doc in result["retrieved_documents"]
+    }
 
 
 def test_multi_hop_traceability_follows_local_references(tmp_path):

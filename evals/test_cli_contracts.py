@@ -4,6 +4,8 @@ import io
 import json
 from types import SimpleNamespace
 
+import pytest
+
 import agent.cli as chat_cli
 import agent.search.cli as search_cli
 from agent.config import SearchConfig
@@ -418,6 +420,20 @@ def test_search_query_cli_outputs_json(monkeypatch, capsys):
     assert '"answer": "search reply for Find BOM-055"' in output
     assert '"mode": "local"' in output
     assert '"retrieval_backend": "local_hybrid"' in output
+
+
+def test_search_query_cli_rejects_non_positive_limit(monkeypatch):
+    SEARCH_CALLS.clear()
+    monkeypatch.setattr(search_cli, "QmsSearchService", StubSearchService)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["search-qms", "Find BOM-055", "--mode", "local", "--limit", "-1"],
+    )
+
+    with pytest.raises(SystemExit):
+        search_cli.query_main()
+
+    assert SEARCH_CALLS == []
 
 
 def test_chat_cli_progress_is_tty_only_and_flag_gated():

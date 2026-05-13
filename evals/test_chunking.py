@@ -167,3 +167,42 @@ def test_selected_answer_chunks_expand_to_neighbors(tmp_path):
     assert {item.metadata["parent_section_id"] for item in expanded} == {
         middle.parent_section_id
     }
+
+
+def test_neighbor_expansion_honors_parent_section_token_cap(tmp_path):
+    doc_path = tmp_path / "VVPR-P01-229_rev-B.md"
+    doc_path.write_text(
+        "# Section\n"
+        + "\n\n".join(" ".join(f"word{i}_{j}" for j in range(140)) for i in range(5)),
+        encoding="utf-8",
+    )
+    manifest = {
+        "created_at": "now",
+        "source_zip": "test.zip",
+        "source_sha256": "hash",
+        "document_count": 1,
+        "skipped_empty_count": 0,
+        "documents": [
+            {
+                **metadata().__dict__,
+                "markdown_path": str(doc_path),
+                "sha256": "hash",
+                "warnings": [],
+            }
+        ],
+    }
+    store = SearchStore(tmp_path / "qms.sqlite")
+    chunks = store.load_manifest(
+        manifest,
+        config=SearchConfig(chunk_size_tokens=180, chunk_overlap_tokens=0),
+    )
+    middle = [chunk for chunk in chunks if chunk.kind == "prose"][2]
+    hit = store.fts_search(middle.text.split()[0], limit=1)[0]
+
+    expanded = store.expand_neighbors(
+        [hit],
+        neighbor_chunks=2,
+        parent_section_max_tokens=middle.token_count,
+    )
+
+    assert [item.chunk_id for item in expanded] == [hit.chunk_id]

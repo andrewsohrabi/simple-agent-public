@@ -337,12 +337,20 @@ class QmsSearchService:
         for hit in base.hits[:5]:
             for reference in self.store.references_from(hit.doc_id, hit.revision)[:8]:
                 target_doc_id = str(reference["target_doc_id"])
+                include_obsolete = bool(plan and plan.include_obsolete)
+                obsolete_filter = (
+                    requested_obsolete_filter(plan.query) if plan is not None else None
+                )
                 documents = self.store.find_documents(
                     doc_id=target_doc_id,
-                    latest_only=True,
-                    include_obsolete=False,
-                    limit=1,
+                    latest_only=False if include_obsolete else True,
+                    include_obsolete=include_obsolete,
+                    limit=8 if include_obsolete else 1,
                 )
+                if obsolete_filter is True:
+                    documents = [doc for doc in documents if doc["is_obsolete"]]
+                elif obsolete_filter is False:
+                    documents = [doc for doc in documents if not doc["is_obsolete"]]
                 for target_hit in self.store.chunks_for_documents(documents, limit_per_doc=1):
                     if target_hit.chunk_id in seen:
                         continue
@@ -486,6 +494,17 @@ class QmsSearchService:
         self, plan: QueryPlan, hits: list[SearchHit], warnings: list[str]
     ) -> list[SearchHit]:
         annotated = self._annotate_obsolete_metadata(hits)
+        obsolete_filter = requested_obsolete_filter(plan.query)
+        if obsolete_filter is True:
+            filtered = [
+                hit
+                for hit in annotated
+                if _metadata_obsolete_flag(hit.metadata.get("is_obsolete")) is True
+            ]
+            removed = len(annotated) - len(filtered)
+            if removed:
+                warnings.append(f"active_hits_filtered_for_obsolete_scope:{removed}")
+            return filtered
         if plan.include_obsolete:
             return annotated
         filtered = [

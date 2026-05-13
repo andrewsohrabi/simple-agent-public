@@ -696,6 +696,30 @@ class SearchStore:
                     hits.append(_hit_from_chunk_row(row, doc_index, source="metadata"))
         return hits
 
+    def chunks_for_hosted_result(
+        self,
+        document: dict[str, object],
+        hosted_text: str,
+        *,
+        limit_per_doc: int = 1,
+    ) -> list[SearchHit]:
+        if not hosted_text.strip():
+            return []
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM chunks
+                WHERE doc_id = ? AND revision = ?
+                ORDER BY ordinal
+                """,
+                (document["doc_id"], document["revision"]),
+            ).fetchall()
+        ranked = _rank_hosted_rows(rows, hosted_text)
+        return [
+            _hit_from_chunk_row(row, index, source="metadata")
+            for index, row in enumerate(ranked[:limit_per_doc])
+        ]
+
     def fts_search(self, query: str, *, limit: int = 20) -> list[SearchHit]:
         if not query.strip():
             return []
@@ -764,11 +788,11 @@ class SearchStore:
                     """,
                     (hit.doc_id, hit.revision, parent_id, lower, upper),
                 ).fetchall()
-                total_tokens = sum(int(row["token_count"]) for row in rows)
-                if total_tokens > parent_section_max_tokens:
-                    rows = [
-                        row for row in rows if abs(int(row["ordinal"]) - chunk_index) <= neighbor_chunks
-                    ]
+                rows = _rows_within_token_cap(
+                    rows,
+                    center_ordinal=chunk_index,
+                    max_tokens=parent_section_max_tokens,
+                )
                 for row in rows:
                     if row["chunk_id"] in seen:
                         continue
@@ -826,6 +850,53 @@ REFERENCE_RE = re.compile(
 RSK_ID_RE = re.compile(r"RSK_R\d+", re.IGNORECASE)
 VVPR_P01_RE = re.compile(r"VVPR-P01-\s*(\d{2,3})", re.IGNORECASE)
 ROW_LABEL_RE = re.compile(r"(?m)^Row\s+\d+:\s*\n", re.IGNORECASE)
+HOSTED_TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9_-]{2,}", re.IGNORECASE)
+
+
+def _rank_hosted_rows(
+    rows: list[sqlite3.Row], hosted_text: str
+) -> list[sqlite3.Row]:
+    if not rows:
+        return []
+    tokens = {
+        token.lower()
+        for token in HOSTED_TOKEN_RE.findall(hosted_text)
+        if len(token) > 2
+    }
+    hosted_lower = " ".join(hosted_text.lower().split())
+
+    def score(row: sqlite3.Row) -> tuple[int, int, int]:
+        text = " ".join(str(row["text"]).lower().split())
+        overlap = sum(1 for token in tokens if token in text)
+        phrase = int(bool(hosted_lower and hosted_lower in text))
+        metadata_penalty = int(str(row["kind"]) == "metadata")
+        return (phrase, overlap, -metadata_penalty)
+
+    return sorted(rows, key=lambda row: (*score(row), -int(row["ordinal"])), reverse=True)
+
+
+def _rows_within_token_cap(
+    rows: list[sqlite3.Row], *, center_ordinal: int, max_tokens: int
+) -> list[sqlite3.Row]:
+    if not rows:
+        return []
+    ordered_by_distance = sorted(
+        rows,
+        key=lambda row: (abs(int(row["ordinal"]) - center_ordinal), int(row["ordinal"])),
+    )
+    if max_tokens <= 0:
+        return sorted(ordered_by_distance[:1], key=lambda row: int(row["ordinal"]))
+    selected: list[sqlite3.Row] = []
+    total_tokens = 0
+    for row in ordered_by_distance:
+        row_tokens = max(int(row["token_count"]), 0)
+        if selected and total_tokens + row_tokens > max_tokens:
+            continue
+        selected.append(row)
+        total_tokens += row_tokens
+    if not selected:
+        selected = ordered_by_distance[:1]
+    return sorted(selected, key=lambda row: int(row["ordinal"]))
 
 
 def _table_row_texts(text: str) -> list[str]:

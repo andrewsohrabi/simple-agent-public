@@ -76,6 +76,7 @@ class OpenAIFileSearch:
                 "hosted_score": result.get("score"),
                 "hosted_rank": result_index + 1,
                 "hosted_content": result.get("content", []),
+                "hosted_content_text": _hosted_content_text(result.get("content", [])),
                 "hosted_annotations": result.get("annotations", []),
             }
             hosted_by_doc[key] = hosted_debug
@@ -90,7 +91,19 @@ class OpenAIFileSearch:
                     "is_obsolete": bool(mapped.get("is_obsolete", False)),
                 }
             )
-        hits = store.chunks_for_documents(documents, limit_per_doc=1)
+        hits: list[SearchHit] = []
+        for document in documents:
+            key = (str(document["doc_id"]), str(document["revision"]))
+            hosted_debug = hosted_by_doc.get(key, {})
+            hosted_text = str(hosted_debug.get("hosted_content_text", ""))
+            hits.extend(
+                store.chunks_for_hosted_result(
+                    document,
+                    hosted_text,
+                    limit_per_doc=1,
+                )
+                or store.chunks_for_documents([document], limit_per_doc=1)
+            )
         return [
             SearchHit(
                 chunk_id=hit.chunk_id,
@@ -173,6 +186,18 @@ def _dump_value(value: Any) -> Any:
     if isinstance(value, dict):
         return {key: _dump_value(item) for key, item in value.items()}
     return value
+
+
+def _hosted_content_text(content: object) -> str:
+    if not isinstance(content, list):
+        return ""
+    values: list[str] = []
+    for item in content:
+        if isinstance(item, dict):
+            text = item.get("text")
+            if isinstance(text, str):
+                values.append(text)
+    return "\n".join(values)
 
 
 def _hosted_score(hosted: dict[str, object] | None, default: float) -> float:

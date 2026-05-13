@@ -17,6 +17,13 @@ from agent.search.sqlite_store import SearchStore
 from agent.search.stats import collect_stats
 
 
+def _bounded_positive_limit(value: str) -> int:
+    limit = int(value)
+    if not 1 <= limit <= 50:
+        raise argparse.ArgumentTypeError("limit must be between 1 and 50")
+    return limit
+
+
 def ingest_main() -> None:
     load_dotenv()
     config = load_config()
@@ -106,7 +113,7 @@ def query_main() -> None:
         default="auto",
         choices=["auto", "local", "hybrid", "hosted"],
     )
-    parser.add_argument("--limit", default=16, type=int)
+    parser.add_argument("--limit", default=16, type=_bounded_positive_limit)
     parser.add_argument(
         "--force-strategy",
         choices=[

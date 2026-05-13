@@ -347,6 +347,28 @@ def test_openai_file_search_maps_hosted_result_to_local_citation_metadata(
                 json.dumps({"filename": "BOM-055_G.docx"}),
             ),
         )
+        conn.execute(
+            """
+            INSERT INTO chunks
+            (chunk_id, doc_id, revision, title, section, ordinal, text, search_text,
+             parent_section_id, kind, token_count, metadata_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "chunk-2",
+                "BOM-055",
+                "G",
+                "MX1 Top-level assembly",
+                "Extracted Content",
+                1,
+                "BOM-055 result evidence confirms the top assembly.",
+                "BOM-055 result evidence confirms the top assembly.",
+                "parent",
+                "prose",
+                8,
+                json.dumps({"filename": "BOM-055_G.docx"}),
+            ),
+        )
     state_path = tmp_path / "openai" / "vector_store_state.json"
     state_path.parent.mkdir()
     state_path.write_text(
@@ -377,7 +399,7 @@ def test_openai_file_search_maps_hosted_result_to_local_citation_metadata(
                 "content": [
                     {
                         "type": "text",
-                        "text": "BOM-055 result",
+                        "text": "BOM-055 result evidence",
                         "annotations": [{"type": "file_citation", "file_id": "file_1"}],
                     }
                 ],
@@ -401,7 +423,8 @@ def test_openai_file_search_maps_hosted_result_to_local_citation_metadata(
     hits = OpenAIFileSearch(config).search("top assembly", store, limit=3)
 
     assert len(hits) == 1
-    assert hits[0].chunk_id == "chunk-1"
+    assert hits[0].chunk_id == "chunk-2"
+    assert hits[0].text == "BOM-055 result evidence confirms the top assembly."
     assert hits[0].source == "hosted_file_search"
     assert hits[0].score == 0.87
     assert hits[0].metadata["hosted_vector_store_id"] == "vs_123"
