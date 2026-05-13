@@ -39,11 +39,28 @@ class QmsSearchService:
             if use_hash_embeddings
             else OpenAIEmbeddingProvider(config)
         )
+        self._validate_runtime_embedding_provider()
         self.hybrid = HybridSearchService(
             self.store, self.vector_index, self.embedding_provider, config
         )
         self.answerer = SearchAnswerer(self.store, config=config)
         self.hosted_search = OpenAIFileSearch(config)
+
+    def _validate_runtime_embedding_provider(self) -> None:
+        if not self.vector_index.exists():
+            return
+        manifest = self.vector_index.manifest()
+        if manifest is None:
+            return
+        manifest_provider = manifest.get("embedding_provider")
+        runtime_provider = getattr(self.embedding_provider, "provider_name", "unknown")
+        if manifest_provider and manifest_provider != runtime_provider:
+            raise RuntimeError(
+                "embedding provider mismatch: "
+                f"manifest={manifest_provider!r}, runtime={runtime_provider!r}; "
+                "rebuild the vector index with the runtime embedding provider "
+                "or enable QMS_USE_HASH_EMBEDDINGS for a hash-built index"
+            )
 
     def search(
         self,
@@ -608,7 +625,7 @@ def _forced_plan(plan: QueryPlan, strategy: str) -> QueryPlan:
     )
 
 
-def _normalize_mode(mode: str) -> str:
+def normalize_search_mode(mode: str) -> str:
     normalized = str(mode or "auto").strip().lower()
     if normalized not in {"auto", "hosted", "hybrid", "local"}:
         raise ValueError(
@@ -616,6 +633,10 @@ def _normalize_mode(mode: str) -> str:
             f"got {mode!r}"
         )
     return normalized
+
+
+def _normalize_mode(mode: str) -> str:
+    return normalize_search_mode(mode)
 
 
 def _uses_lexical_priority(plan: QueryPlan | None) -> bool:

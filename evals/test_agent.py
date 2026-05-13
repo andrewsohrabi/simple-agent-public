@@ -1,13 +1,47 @@
+import re
+from types import SimpleNamespace
+
 import pytest
 from dotenv import load_dotenv
 
+import agent.core as core
 from agent.core import make_agent
 
 load_dotenv()
 
 
+class StubAgent:
+    def invoke(self, payload):
+        messages = list(payload["messages"])
+        latest = _message_content(messages[-1])
+        if "2 + 2" in latest:
+            content = "4"
+        elif "what is my name" in latest.lower():
+            content = f"Your name is {_remembered_name(messages)}."
+        else:
+            content = "I understand."
+        messages.append(SimpleNamespace(content=content))
+        return {"messages": messages}
+
+
+def _message_content(message) -> str:
+    if isinstance(message, dict):
+        return str(message.get("content", ""))
+    return str(getattr(message, "content", ""))
+
+
+def _remembered_name(messages) -> str:
+    for message in messages:
+        match = re.search(r"\bmy name is ([A-Za-z]+)", _message_content(message), re.I)
+        if match:
+            return match.group(1)
+    return "unknown"
+
+
 @pytest.fixture
-def agent():
+def agent(monkeypatch):
+    monkeypatch.setattr(core, "init_chat_model", lambda _model_name: object())
+    monkeypatch.setattr(core, "create_deep_agent", lambda **_kwargs: StubAgent())
     return make_agent()
 
 

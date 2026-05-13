@@ -75,6 +75,16 @@ def test_search_rejects_empty_query():
     assert response.status_code == 400
 
 
+def test_search_rejects_invalid_mode():
+    client = TestClient(app)
+    response = client.post(
+        "/search",
+        json={"query": "Find BOM-055 Rev G", "mode": "unsupported"},
+    )
+    assert response.status_code == 400
+    assert "mode must be one of" in response.json()["detail"]
+
+
 def test_search_uses_response_contract(monkeypatch):
     monkeypatch.setattr(server, "QmsSearchService", StubSearchService)
     client = TestClient(app)
@@ -115,6 +125,19 @@ def test_chat_rejects_missing_user_message():
     client = TestClient(app)
     response = client.post("/chat", json={"messages": [{"role": "assistant", "content": "hi"}]})
     assert response.status_code == 400
+
+
+def test_chat_rejects_invalid_mode():
+    client = TestClient(app)
+    response = client.post(
+        "/chat",
+        json={
+            "messages": [{"role": "user", "content": "Find BOM-055 Rev G"}],
+            "mode": "unsupported",
+        },
+    )
+    assert response.status_code == 400
+    assert "mode must be one of" in response.json()["detail"]
 
 
 def test_document_and_chunk_lookup_contracts():

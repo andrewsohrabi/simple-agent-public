@@ -7,7 +7,7 @@ import os
 from pydantic import BaseModel
 
 from agent.config import load_config
-from agent.search.service import QmsSearchService
+from agent.search.service import QmsSearchService, normalize_search_mode
 from agent.search.sqlite_store import SearchStore
 from agent.search.stats import collect_stats
 
@@ -46,6 +46,13 @@ def _search_service() -> QmsSearchService:
 
 def _store() -> SearchStore:
     return SearchStore(config.index_dir / "qms.sqlite")
+
+
+def _validate_mode(mode: str) -> str:
+    try:
+        return normalize_search_mode(mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def _row_to_document(row) -> dict[str, object]:
@@ -92,8 +99,9 @@ def chat(req: ChatRequest):
         )
         if not latest_user_message.strip():
             raise HTTPException(status_code=400, detail="user message is required")
+        mode = _validate_mode(req.mode)
         service = _search_service()
-        result = service.search(latest_user_message, mode=req.mode, limit=req.limit)
+        result = service.search(latest_user_message, mode=mode, limit=req.limit)
         return {"reply": result["answer"], **result}
     except Exception as exc:
         if isinstance(exc, HTTPException):
@@ -105,9 +113,12 @@ def chat(req: ChatRequest):
 def search(req: SearchRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="query is required")
+    mode = _validate_mode(req.mode)
     try:
         service = _search_service()
-        return service.search(req.query, mode=req.mode, limit=req.limit)
+        return service.search(req.query, mode=mode, limit=req.limit)
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

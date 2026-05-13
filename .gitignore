@@ -28,11 +28,15 @@ node_modules/
 frontend/playwright-report/
 frontend/test-results/
 
-# Generated search artifacts. The OpenAI vector bundle is downloaded from the
-# release asset; SQLite/FTS, hosted OpenAI state, and raw eval traces remain
-# local-only.
+# Generated search artifacts. The OpenAI vector assets are committed through
+# Git LFS; SQLite/FTS, hosted OpenAI state, and raw eval traces remain local-only.
 .data/*
 !.data/
+!.data/qms-index/
+.data/qms-index/*
+!.data/qms-index/manifest.json
+!.data/qms-index/vectors.npy
+!.data/qms-index/vector_metadata.json
 data/generated/
 data/raw/
 *.faiss
