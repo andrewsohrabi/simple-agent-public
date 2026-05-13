@@ -460,15 +460,26 @@ class QmsSearchService:
             warnings.append("local_vector_index_unavailable")
         except Exception as exc:  # fall back to deterministic lexical search
             warnings.append(f"vector_search_fallback:{type(exc).__name__}")
-        fts_hits = _dedupe_hits(self.store.fts_search(expansion.expanded_query, limit=limit))
+        fallback_error = None
+        try:
+            fts_hits = _dedupe_hits(
+                self.store.fts_search(expansion.expanded_query, limit=limit)
+            )
+        except Exception as exc:
+            warnings.append(f"local_fts_fallback_failed:{type(exc).__name__}")
+            fallback_error = f"{type(exc).__name__}: {exc}"
+            fts_hits = []
+        trace: dict[str, object] = {
+            "query_expansion": _expansion_trace(expansion),
+            "fallback": "local_fts",
+            "returned": len(fts_hits),
+        }
+        if fallback_error:
+            trace["fallback_error"] = fallback_error
         return RetrievalOutcome(
             fts_hits,
             "local_fts",
-            trace={
-                "query_expansion": _expansion_trace(expansion),
-                "fallback": "local_fts",
-                "returned": len(fts_hits),
-            },
+            trace=trace,
         )
 
     def _apply_obsolete_scope(

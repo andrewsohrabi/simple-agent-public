@@ -26,6 +26,8 @@ def sync_openai_vector_store(
     state = _load_existing_state(config.openai_vector_store_state)
     markdown_paths = sorted(normalized_dir.glob("*.md"))
     file_signatures = [_file_signature(path) for path in markdown_paths]
+    previous_vector_store_id = _state_vector_store_id(state)
+    previous_file_ids = _state_file_ids(state)
     if (
         not force
         and state.get("status") == "synced"
@@ -93,6 +95,12 @@ def sync_openai_vector_store(
         )
         raise
 
+    previous_cleanup = _cleanup_previous_hosted_assets(
+        client,
+        previous_vector_store_id=previous_vector_store_id,
+        previous_file_ids=previous_file_ids,
+        current_vector_store_id=str(vector_store_id),
+    )
     state = _state_payload(
         status="synced",
         vector_store_id=str(vector_store_id),
@@ -100,6 +108,7 @@ def sync_openai_vector_store(
         normalized_dir=normalized_dir,
         file_signatures=file_signatures,
         files=files,
+        previous_cleanup=previous_cleanup,
     )
     config.openai_vector_store_state.write_text(
         json.dumps(state, indent=2), encoding="utf-8"
@@ -127,6 +136,62 @@ def _load_existing_state(path: Path) -> dict[str, object]:
     return state if isinstance(state, dict) else {}
 
 
+def _state_vector_store_id(state: dict[str, object]) -> str | None:
+    vector_store_id = state.get("vector_store_id")
+    return vector_store_id if isinstance(vector_store_id, str) and vector_store_id else None
+
+
+def _state_file_ids(state: dict[str, object]) -> list[str]:
+    files = state.get("files")
+    if not isinstance(files, list):
+        return []
+    file_ids: list[str] = []
+    for item in files:
+        if not isinstance(item, dict):
+            continue
+        file_id = item.get("file_id")
+        if isinstance(file_id, str) and file_id and file_id not in file_ids:
+            file_ids.append(file_id)
+    return file_ids
+
+
+def _cleanup_previous_hosted_assets(
+    client,
+    *,
+    previous_vector_store_id: str | None,
+    previous_file_ids: list[str],
+    current_vector_store_id: str,
+) -> dict[str, object] | None:
+    if (
+        not previous_vector_store_id
+        or previous_vector_store_id == current_vector_store_id
+    ):
+        return None
+
+    cleanup: dict[str, object] = {
+        "previous_vector_store_id": previous_vector_store_id,
+        "deleted_file_ids": [],
+    }
+    errors: list[str] = []
+    try:
+        client.vector_stores.delete(previous_vector_store_id)
+        cleanup["deleted_vector_store_id"] = previous_vector_store_id
+    except Exception as exc:
+        errors.append(f"vector_store:{type(exc).__name__}: {exc}")
+
+    deleted_file_ids: list[str] = []
+    for file_id in previous_file_ids:
+        try:
+            client.files.delete(file_id)
+            deleted_file_ids.append(file_id)
+        except Exception as exc:
+            errors.append(f"file:{file_id}:{type(exc).__name__}: {exc}")
+    cleanup["deleted_file_ids"] = deleted_file_ids
+    if errors:
+        cleanup["errors"] = errors
+    return cleanup
+
+
 def _state_payload(
     *,
     status: str,
@@ -136,6 +201,7 @@ def _state_payload(
     file_signatures: list[dict[str, object]],
     files: list[dict[str, object]],
     error: str | None = None,
+    previous_cleanup: dict[str, object] | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "status": status,
@@ -150,4 +216,6 @@ def _state_payload(
     }
     if error:
         payload["error"] = error
+    if previous_cleanup:
+        payload["previous_cleanup"] = previous_cleanup
     return payload

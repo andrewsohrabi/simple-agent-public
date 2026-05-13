@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 
 import pytest
 
@@ -282,6 +283,28 @@ def test_service_uses_hosted_search_then_falls_back_to_local(tmp_path):
     assert hosted_fallback["retrieved_documents"][0]["doc_id"] == "VVPR-P01-179"
     assert hosted_fallback["retrieval_backend"] in {"local_hybrid", "local_fts"}
     assert "hosted_file_search_no_hits" in hosted_fallback["warnings"]
+
+
+def test_local_retrieval_handles_fts_failure_after_vector_error(tmp_path, monkeypatch):
+    service = _service(tmp_path)
+
+    class HybridExplodes:
+        def search_with_trace(self, *args, **kwargs):
+            raise RuntimeError("vector index unavailable")
+
+    def fts_raises(*args, **kwargs):
+        raise sqlite3.OperationalError("missing schema")
+
+    monkeypatch.setattr(service.vector_index, "exists", lambda: True)
+    service.hybrid = HybridExplodes()
+    monkeypatch.setattr(service.store, "fts_search", fts_raises)
+
+    result = service.search("unmatched local retrieval query", mode="local")
+
+    assert result["retrieval_backend"] == "local_fts"
+    assert result["retrieved_documents"] == []
+    assert "vector_search_fallback:RuntimeError" in result["warnings"]
+    assert "local_fts_fallback_failed:OperationalError" in result["warnings"]
 
 
 @pytest.mark.parametrize("mode", ["local", "hybrid"])
