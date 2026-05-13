@@ -587,16 +587,17 @@ class SearchAnswerer:
         return self._metadata_result(answer, docs, plan, section="third_party_report_mapping")
 
     def _answer_ecr_count(self, plan: QueryPlan) -> dict[str, object]:
-        docs = self.store.find_documents(
-            prefix="ECR",
-            latest_only=True,
-            include_obsolete=False,
-            limit=100,
-        )
+        docs = self._documents_for_plan(plan, limit=100)
         signed_count = sum(1 for doc in docs if doc["is_signed"])
+        obsolete_count = sum(1 for doc in docs if doc["is_obsolete"])
+        obsolete_text = (
+            f"{obsolete_count} obsolete and {len(docs) - obsolete_count} not obsolete"
+            if obsolete_count
+            else "not obsolete"
+        )
         answer = (
-            f"Count: {len(docs)} active current engineering change requests. "
-            f"All {signed_count} are signed and not obsolete: {_join_doc_ids(docs)}."
+            f"Count: {len(docs)} engineering change request document revisions. "
+            f"{signed_count} are signed; {obsolete_text}: {_join_doc_ids(docs)}."
         )
         return self._metadata_result(answer, docs, plan, section="ecr_count")
 

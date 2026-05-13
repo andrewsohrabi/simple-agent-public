@@ -141,18 +141,19 @@ def plan_query(query: str) -> QueryPlan:
             intent="verification_completed_vs_planned",
         )
     if "traceability matrix" in lower or "traceability matrices" in lower:
+        requires_count = any(term in lower for term in ["how many", "count", "number of"])
         return QueryPlan(
             category="enumeration",
-            strategy="sql_count" if any(term in lower for term in ["how many", "count", "number of"]) else "sql_list",
+            strategy="sql_count" if requires_count else "sql_list",
             query=q,
             doc_id=doc_id,
             prefix="VVAM",
             revision=revision,
             latest_only=True,
             include_obsolete=include_obsolete,
-            requires_count=any(term in lower for term in ["how many", "count", "number of"]),
-            requires_list=not any(term in lower for term in ["how many", "count", "number of"]),
-            intent="traceability_matrix_count",
+            requires_count=requires_count,
+            requires_list=not requires_count,
+            intent="traceability_matrix_count" if requires_count else None,
         )
     if (
         ("non-empty" in lower or "non empty" in lower)

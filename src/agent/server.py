@@ -15,6 +15,8 @@ load_dotenv()
 config = load_config()
 
 app = FastAPI()
+_SEARCH_SERVICE: QmsSearchService | None = None
+_SEARCH_SERVICE_FACTORY = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,7 +43,12 @@ class SearchRequest(BaseModel):
 
 
 def _search_service() -> QmsSearchService:
-    return QmsSearchService(config, use_hash_embeddings=config.use_hash_embeddings)
+    global _SEARCH_SERVICE, _SEARCH_SERVICE_FACTORY
+    factory = QmsSearchService
+    if _SEARCH_SERVICE is None or _SEARCH_SERVICE_FACTORY is not factory:
+        _SEARCH_SERVICE = factory(config, use_hash_embeddings=config.use_hash_embeddings)
+        _SEARCH_SERVICE_FACTORY = factory
+    return _SEARCH_SERVICE
 
 
 def _store() -> SearchStore:

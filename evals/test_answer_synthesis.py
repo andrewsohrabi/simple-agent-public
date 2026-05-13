@@ -413,6 +413,37 @@ def test_scoped_count_answer_applies_signature_and_obsolete_filters(tmp_path):
     assert all(doc["metadata"]["is_obsolete"] for doc in obsolete["retrieved_documents"])
 
 
+def test_ecr_count_respects_history_inclusive_scope(tmp_path):
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.initialize()
+    _insert_metadata_document(
+        store,
+        doc_id="ECR-100",
+        prefix="ECR",
+        title="Active Engineering Change Request",
+        signed=True,
+    )
+    _insert_metadata_document(
+        store,
+        doc_id="ECR-099",
+        prefix="ECR",
+        title="Historical Engineering Change Request",
+        latest=False,
+        signed=True,
+        obsolete=True,
+    )
+    answerer = SearchAnswerer(store, config=SearchConfig(), synthesizer=None)
+    query = "How many historical ECRs are in the system?"
+
+    result = answerer.answer(query, plan_query(query), [])
+
+    assert result["answer"].startswith("Count: 2")
+    assert {
+        (doc["doc_id"], doc["metadata"]["is_obsolete"])
+        for doc in result["retrieved_documents"]
+    } == {("ECR-099", True), ("ECR-100", False)}
+
+
 def test_ecr_status_honors_requested_filing_year(tmp_path, monkeypatch):
     _freeze_answer_date(monkeypatch)
     store = SearchStore(tmp_path / "qms.sqlite")

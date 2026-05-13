@@ -127,6 +127,29 @@ def test_chat_uses_search_response_contract(monkeypatch):
     assert data["retrieval_backend"] == "local_hybrid"
 
 
+def test_search_service_is_reused_between_requests(monkeypatch):
+    created = []
+
+    class CountingSearchService(StubSearchService):
+        def __init__(self, *_args, **_kwargs):
+            created.append(self)
+
+    monkeypatch.setattr(server, "_SEARCH_SERVICE", None, raising=False)
+    monkeypatch.setattr(server, "_SEARCH_SERVICE_FACTORY", None, raising=False)
+    monkeypatch.setattr(server, "QmsSearchService", CountingSearchService)
+    client = TestClient(app)
+
+    assert client.post("/search", json={"query": "Find BOM-055"}).status_code == 200
+    assert (
+        client.post(
+            "/chat",
+            json={"messages": [{"role": "user", "content": "Find BOM-055"}]},
+        ).status_code
+        == 200
+    )
+    assert len(created) == 1
+
+
 def test_chat_preserves_prior_turns_in_search_query(monkeypatch):
     captured = {}
 

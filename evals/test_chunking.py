@@ -169,6 +169,30 @@ def test_selected_answer_chunks_expand_to_neighbors(tmp_path):
     }
 
 
+def test_prose_chunk_ordinals_advance_when_overlap_is_enabled():
+    markdown = "# Section\n" + "\n\n".join(
+        " ".join(f"para{index}_{token}" for token in range(60))
+        for index in range(5)
+    )
+    chunks = chunk_text(
+        metadata(),
+        markdown,
+        config=SearchConfig(
+            chunk_size_tokens=100,
+            chunk_overlap_tokens=30,
+            min_chunk_tokens=1,
+            max_chunk_tokens=200,
+        ),
+    )
+    prose = [chunk for chunk in chunks if chunk.kind == "prose"]
+
+    assert len(prose) >= 3
+    assert prose[-1].ordinal_end == 4
+    assert [chunk.ordinal_start for chunk in prose] == sorted(
+        chunk.ordinal_start for chunk in prose
+    )
+
+
 def test_neighbor_expansion_honors_parent_section_token_cap(tmp_path):
     doc_path = tmp_path / "VVPR-P01-229_rev-B.md"
     doc_path.write_text(

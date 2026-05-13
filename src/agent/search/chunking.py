@@ -240,6 +240,7 @@ def _emit_prose_chunks(
             and current_tokens >= config.min_chunk_tokens
         ):
             raw = "\n\n".join(current).strip()
+            emitted_end = ordinal + len(current) - 1
             chunk_index = _append_chunk(
                 chunks,
                 metadata,
@@ -248,17 +249,18 @@ def _emit_prose_chunks(
                 "prose",
                 chunk_index,
                 ordinal,
-                ordinal + len(current) - 1,
+                emitted_end,
             )
             overlap = _overlap_units(current, config.chunk_overlap_tokens)
             current = overlap
             current_tokens = count_tokens("\n\n".join(current))
-            ordinal = max(ordinal, ordinal + len(current) - 1)
+            ordinal = emitted_end - len(overlap) + 1 if overlap else emitted_end + 1
         if unit_tokens > config.max_chunk_tokens:
             split_units = _split_long_unit(unit, config.max_chunk_tokens)
             for split in split_units:
                 if current and current_tokens + count_tokens(split) > config.max_chunk_tokens:
                     raw = "\n\n".join(current).strip()
+                    emitted_end = ordinal + len(current) - 1
                     chunk_index = _append_chunk(
                         chunks,
                         metadata,
@@ -267,8 +269,9 @@ def _emit_prose_chunks(
                         "prose",
                         chunk_index,
                         ordinal,
-                        ordinal + len(current) - 1,
+                        emitted_end,
                     )
+                    ordinal = emitted_end + 1
                     current = []
                     current_tokens = 0
                 current.append(split)

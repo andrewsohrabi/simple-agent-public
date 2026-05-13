@@ -9,6 +9,16 @@ def test_query_plan_routes_enumeration_to_sql_count():
     assert plan.requires_count is True
 
 
+def test_traceability_matrix_list_preserves_list_intent():
+    plan = plan_query("List traceability matrices")
+
+    assert plan.strategy == "sql_list"
+    assert plan.prefix == "VVAM"
+    assert plan.requires_list is True
+    assert plan.requires_count is False
+    assert plan.intent is None
+
+
 def test_query_plan_extracts_revision_diff():
     plan = plan_query("What changed between Rev C and Rev D of the risk analysis?")
     assert plan.category == "revision_diff"
