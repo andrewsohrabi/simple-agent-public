@@ -155,7 +155,11 @@ class LocalVectorIndex:
     def manifest(self) -> dict[str, object] | None:
         if not self.manifest_path.exists():
             return None
-        return json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            return None
+        return data if isinstance(data, dict) else None
 
     def search(
         self,

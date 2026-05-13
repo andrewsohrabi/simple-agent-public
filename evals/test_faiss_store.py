@@ -181,6 +181,16 @@ def test_local_vector_index_uses_numpy_fallback_when_faiss_missing(tmp_path, mon
     assert [hit.doc_id for hit in hits] == ["DOC-B", "DOC-A"]
 
 
+def test_local_vector_index_manifest_returns_none_for_invalid_json(tmp_path):
+    index = LocalVectorIndex(tmp_path, SearchConfig(index_dir=tmp_path))
+    index.manifest_path.write_text(
+        "version https://git-lfs.github.com/spec/v1\n",
+        encoding="utf-8",
+    )
+
+    assert index.manifest() is None
+
+
 def test_local_vector_index_rejects_dimension_mismatch(tmp_path):
     config = SearchConfig(index_dir=tmp_path, embedding_dimensions=3072)
     chunks = [
