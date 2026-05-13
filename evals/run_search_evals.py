@@ -18,6 +18,7 @@ from evals.dataset_schema import dataset_path, load_dataset, summarize_dataset
 from evals.reporting import (
     PASS_THRESHOLD,
     aggregate_scores,
+    extract_reported_count,
     score_case,
     write_json_report,
     write_markdown_report,
@@ -347,10 +348,7 @@ def _latest_revision_from_documents(documents: list[Any]) -> str | None:
 
 
 def _extract_count(answer: str) -> int | None:
-    import re
-
-    match = re.search(r"\b(?:count\s*:\s*)?(\d+)\b", answer, re.IGNORECASE)
-    return int(match.group(1)) if match else None
+    return extract_reported_count(answer)
 
 
 if __name__ == "__main__":

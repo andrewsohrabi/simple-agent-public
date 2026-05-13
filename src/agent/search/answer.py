@@ -17,6 +17,7 @@ from agent.search.citations import (
     validate_citations,
 )
 from agent.search.ingest import load_ingest_manifest
+from agent.search.query_filters import requested_signature_filter
 from agent.search.query_plan import QueryPlan
 from agent.search.schema import SearchHit
 from agent.search.sqlite_store import SearchStore
@@ -847,8 +848,10 @@ class SearchAnswerer:
             clauses.append("is_obsolete = 1")
         elif not plan.include_obsolete:
             clauses.append("is_obsolete = 0")
-        if "signed" in lower:
-            clauses.append("is_signed = 1")
+        signature_filter = requested_signature_filter(plan.query)
+        if signature_filter is not None:
+            clauses.append("is_signed = ?")
+            values.append(int(signature_filter))
         if plan.latest_only:
             clauses.append("is_latest = 1")
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""

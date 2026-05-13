@@ -9,6 +9,7 @@ from agent.search.embeddings import HashEmbeddingProvider, OpenAIEmbeddingProvid
 from agent.search.faiss_store import LocalVectorIndex
 from agent.search.hybrid import HybridSearchService
 from agent.search.openai_file_search import OpenAIFileSearch
+from agent.search.query_filters import requested_signature_filter
 from agent.search.query_expansion import expand_query
 from agent.search.query_plan import QueryPlan, plan_query
 from agent.search.schema import SearchHit
@@ -194,8 +195,10 @@ class QmsSearchService:
             clauses.append("is_obsolete = 1")
         elif not plan.include_obsolete:
             clauses.append("is_obsolete = 0")
-        if "signed" in lower:
-            clauses.append("is_signed = 1")
+        signature_filter = requested_signature_filter(plan.query)
+        if signature_filter is not None:
+            clauses.append("is_signed = ?")
+            values.append(int(signature_filter))
         if plan.latest_only:
             clauses.append("is_latest = 1")
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
@@ -223,9 +226,11 @@ class QmsSearchService:
             include_obsolete=plan.include_obsolete,
             limit=500,
         )
-        lower_query = plan.query.lower()
-        if "signed" in lower_query:
-            documents = [doc for doc in documents if doc["is_signed"]]
+        signature_filter = requested_signature_filter(plan.query)
+        if signature_filter is not None:
+            documents = [
+                doc for doc in documents if bool(doc["is_signed"]) is signature_filter
+            ]
         scored: list[tuple[int, dict[str, object]]] = []
         for doc in documents:
             score = _title_candidate_score(plan.query, doc)
@@ -744,7 +749,7 @@ def _title_candidate_score(query: str, doc: dict[str, object]) -> int:
         score += 20
     if bool(doc.get("is_latest")):
         score += 1
-    if bool(doc.get("is_signed")) and "signed" in query.lower():
+    if bool(doc.get("is_signed")) and requested_signature_filter(query) is True:
         score += 2
     return score
 

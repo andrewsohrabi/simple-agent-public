@@ -881,9 +881,31 @@ def _forbidden_term_present(term: str, normalized_answer: str) -> bool:
     return normalized_term in normalized_answer
 
 
+def extract_reported_count(answer: str) -> int | None:
+    match = re.search(r"\bcount\s*:\s*(\d+)\b", answer, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    candidates = []
+    for number in re.finditer(r"(?<![\w-])(\d+)(?![\w-])", answer):
+        start, end = number.span(1)
+        if _is_decimal_fragment(answer, start, end):
+            continue
+        candidates.append(int(number.group(1)))
+    return candidates[0] if len(candidates) == 1 else None
+
+
 def _extract_count(answer: str) -> int | None:
-    match = re.search(r"\b(?:count\s*:\s*)?(\d+)\b", answer, re.IGNORECASE)
-    return int(match.group(1)) if match else None
+    return extract_reported_count(answer)
+
+
+def _is_decimal_fragment(value: str, start: int, end: int) -> bool:
+    previous_is_decimal = (
+        start >= 2 and value[start - 1] == "." and value[start - 2].isdigit()
+    )
+    next_is_decimal = (
+        end + 1 < len(value) and value[end] == "." and value[end + 1].isdigit()
+    )
+    return previous_is_decimal or next_is_decimal
 
 
 def _average(values: Any) -> float:

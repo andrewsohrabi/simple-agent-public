@@ -6,6 +6,7 @@ import pytest
 
 from agent.config import SearchConfig
 from agent.search.citations import validate_citation_rows, validate_citations
+from agent.search.query_plan import plan_query
 from agent.search.schema import Citation
 from agent.search.service import QmsSearchService
 from agent.search.sqlite_store import SearchStore
@@ -202,6 +203,43 @@ def test_service_routes_counts_lists_and_revision_chains_to_sql(tmp_path):
     assert chain["retrieval_backend"] == "revision_chain"
     assert "Rev G latest" in chain["answer"]
     assert "Rev F obsolete" in chain["answer"]
+
+
+def test_unsigned_sql_list_filters_unsigned_instead_of_signed(tmp_path):
+    service = _service(tmp_path)
+
+    documents = service._documents_for_sql_plan(
+        plan_query("List unsigned QMS documents"),
+        limit=10,
+    )
+
+    assert documents
+    assert all(not document["is_signed"] for document in documents)
+    assert {document["doc_id"] for document in documents} >= {"BOM-055", "VVPR-P01-179"}
+
+
+def test_signed_versus_unsigned_sql_list_keeps_both_signature_states(tmp_path):
+    service = _service(tmp_path)
+
+    documents = service._documents_for_sql_plan(
+        plan_query("List signed versus unsigned QMS documents"),
+        limit=10,
+    )
+
+    assert any(document["is_signed"] for document in documents)
+    assert any(not document["is_signed"] for document in documents)
+
+
+def test_unsigned_title_ranked_documents_do_not_use_signed_filter(tmp_path):
+    service = _service(tmp_path)
+
+    documents = service._title_ranked_documents(
+        plan_query("Show unsigned verification protocols"),
+        limit=10,
+    )
+
+    assert [document["doc_id"] for document in documents] == ["VVPR-P01-179"]
+    assert all(not document["is_signed"] for document in documents)
 
 
 def test_service_uses_hosted_search_then_falls_back_to_local(tmp_path):
