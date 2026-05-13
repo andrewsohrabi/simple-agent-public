@@ -68,6 +68,56 @@ def test_sqlite_store_populates_index_tables_from_manifest(tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM ingest_runs").fetchone()[0] == 1
 
 
+def test_sqlite_store_find_documents_uses_exact_doc_id(tmp_path):
+    manifest = _manifest(tmp_path)
+    documents = []
+    for doc_id in ("VVPR-P01-21", "VVPR-P01-214"):
+        markdown_path = tmp_path / f"{doc_id}.md"
+        markdown_path.write_text(
+            f"# {doc_id}\n\nDocument ID: {doc_id}. Verification protocol.",
+            encoding="utf-8",
+        )
+        documents.append(
+            {
+                **manifest["documents"][0],
+                "doc_id": doc_id,
+                "canonical_doc_key": doc_id,
+                "prefix": "VVPR",
+                "title": f"{doc_id} protocol",
+                "filename": f"{doc_id}.docx",
+                "source_path": f"qms/{doc_id}.docx",
+                "markdown_path": str(markdown_path),
+            }
+        )
+    manifest["document_count"] = len(documents)
+    manifest["documents"] = documents
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.load_manifest(
+        manifest,
+        config=SearchConfig(
+            min_chunk_tokens=1,
+            chunk_size_tokens=20,
+            max_chunk_tokens=40,
+            index_dir=tmp_path,
+        ),
+    )
+
+    results = store.find_documents(
+        doc_id="VVPR-P01-21",
+        latest_only=True,
+        include_obsolete=True,
+        limit=10,
+    )
+
+    assert [row["doc_id"] for row in results] == ["VVPR-P01-21"]
+
+
+def test_sqlite_store_fts_search_returns_empty_before_schema_initialized(tmp_path):
+    store = SearchStore(tmp_path / "qms.sqlite")
+
+    assert store.fts_search("release approval", limit=5) == []
+
+
 def test_sqlite_store_extracts_compact_3p_references(tmp_path):
     manifest = _manifest(tmp_path)
     markdown_path = tmp_path / "MEMO-P01-685.md"

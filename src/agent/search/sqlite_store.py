@@ -323,8 +323,8 @@ class SearchStore:
         clauses: list[str] = []
         values: list[object] = []
         if doc_id:
-            clauses.append("doc_id LIKE ?")
-            values.append(f"%{doc_id.upper()}%")
+            clauses.append("doc_id = ?")
+            values.append(doc_id.upper())
         if prefix:
             clauses.append("prefix = ?")
             values.append(prefix.upper())
@@ -403,8 +403,8 @@ class SearchStore:
         clauses: list[str] = []
         values: list[object] = []
         if doc_id:
-            clauses.append("c.doc_id LIKE ?")
-            values.append(f"%{doc_id.upper()}%")
+            clauses.append("c.doc_id = ?")
+            values.append(doc_id.upper())
         if prefix:
             clauses.append("d.prefix = ?")
             values.append(prefix.upper())
@@ -670,14 +670,17 @@ class SearchStore:
             except sqlite3.OperationalError:
                 rows = []
             if not rows:
-                rows = conn.execute(
-                    """
-                    SELECT * FROM chunks
-                    WHERE lower(search_text) LIKE ?
-                    LIMIT ?
-                    """,
-                    (f"%{query.lower().replace('-', ' ')}%", limit),
-                ).fetchall()
+                try:
+                    rows = conn.execute(
+                        """
+                        SELECT * FROM chunks
+                        WHERE lower(search_text) LIKE ?
+                        LIMIT ?
+                        """,
+                        (f"%{query.lower().replace('-', ' ')}%", limit),
+                    ).fetchall()
+                except sqlite3.OperationalError:
+                    rows = []
         hits: list[SearchHit] = []
         for index, row in enumerate(rows):
             hits.append(_hit_from_chunk_row(row, index, source="fts"))

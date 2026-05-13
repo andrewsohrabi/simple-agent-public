@@ -4,7 +4,7 @@ import json
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.config import load_config
 from agent.search.service import QmsSearchService, normalize_search_mode
@@ -31,13 +31,13 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[Message]
     mode: str = "auto"
-    limit: int = 16
+    limit: int = Field(default=16, ge=1, le=50)
 
 
 class SearchRequest(BaseModel):
     query: str
     mode: str = "auto"
-    limit: int = 16
+    limit: int = Field(default=16, ge=1, le=50)
 
 
 def _search_service() -> QmsSearchService:
@@ -53,6 +53,32 @@ def _validate_mode(mode: str) -> str:
         return normalize_search_mode(mode)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _chat_search_query(messages: list[Message]) -> str:
+    latest_user_index = None
+    for index in range(len(messages) - 1, -1, -1):
+        message = messages[index]
+        if message.role == "user" and message.content.strip():
+            latest_user_index = index
+            break
+    if latest_user_index is None:
+        return ""
+
+    latest_user_message = messages[latest_user_index].content.strip()
+    prior_lines = [
+        f"{message.role}: {message.content.strip()}"
+        for message in messages[:latest_user_index]
+        if message.content.strip()
+    ]
+    if not prior_lines:
+        return latest_user_message
+    return (
+        "Prior conversation:\n"
+        + "\n".join(prior_lines)
+        + "\n\nLatest user message:\n"
+        + latest_user_message
+    )
 
 
 def _row_to_document(row) -> dict[str, object]:
@@ -93,15 +119,12 @@ def _row_to_chunk(row) -> dict[str, object]:
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
-        latest_user_message = next(
-            (message.content for message in reversed(req.messages) if message.role == "user"),
-            "",
-        )
-        if not latest_user_message.strip():
+        search_query = _chat_search_query(req.messages)
+        if not search_query:
             raise HTTPException(status_code=400, detail="user message is required")
         mode = _validate_mode(req.mode)
         service = _search_service()
-        result = service.search(latest_user_message, mode=mode, limit=req.limit)
+        result = service.search(search_query, mode=mode, limit=req.limit)
         return {"reply": result["answer"], **result}
     except Exception as exc:
         if isinstance(exc, HTTPException):

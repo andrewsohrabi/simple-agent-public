@@ -85,6 +85,18 @@ def test_search_rejects_invalid_mode():
     assert "mode must be one of" in response.json()["detail"]
 
 
+def test_search_rejects_out_of_range_limit():
+    client = TestClient(app)
+    assert (
+        client.post("/search", json={"query": "Find BOM-055", "limit": 0}).status_code
+        == 422
+    )
+    assert (
+        client.post("/search", json={"query": "Find BOM-055", "limit": 51}).status_code
+        == 422
+    )
+
+
 def test_search_uses_response_contract(monkeypatch):
     monkeypatch.setattr(server, "QmsSearchService", StubSearchService)
     client = TestClient(app)
@@ -121,6 +133,34 @@ def test_chat_uses_search_response_contract(monkeypatch):
     assert data["retrieval_backend"] == "local_hybrid"
 
 
+def test_chat_preserves_prior_turns_in_search_query(monkeypatch):
+    captured = {}
+
+    class CapturingSearchService(StubSearchService):
+        def search(self, query, *, mode="auto", limit=16):
+            captured["query"] = query
+            return super().search(query, mode=mode, limit=limit)
+
+    monkeypatch.setattr(server, "QmsSearchService", CapturingSearchService)
+    client = TestClient(app)
+    response = client.post(
+        "/chat",
+        json={
+            "messages": [
+                {"role": "user", "content": "Find BOM-055 Rev G"},
+                {"role": "assistant", "content": "BOM-055 Rev G is the MX1 BOM."},
+                {"role": "user", "content": "What ECO references that document?"},
+            ],
+            "mode": "local",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Find BOM-055 Rev G" in captured["query"]
+    assert "BOM-055 Rev G is the MX1 BOM." in captured["query"]
+    assert "What ECO references that document?" in captured["query"]
+
+
 def test_chat_rejects_missing_user_message():
     client = TestClient(app)
     response = client.post("/chat", json={"messages": [{"role": "assistant", "content": "hi"}]})
@@ -138,6 +178,17 @@ def test_chat_rejects_invalid_mode():
     )
     assert response.status_code == 400
     assert "mode must be one of" in response.json()["detail"]
+
+
+def test_chat_rejects_out_of_range_limit():
+    client = TestClient(app)
+    payload = {
+        "messages": [{"role": "user", "content": "Find BOM-055"}],
+        "limit": 0,
+    }
+    assert client.post("/chat", json=payload).status_code == 422
+    payload["limit"] = 51
+    assert client.post("/chat", json=payload).status_code == 422
 
 
 def test_document_and_chunk_lookup_contracts():
