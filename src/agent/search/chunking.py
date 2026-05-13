@@ -459,16 +459,26 @@ def _emit_table_chunks(
 
 
 def _parse_table_lines(lines: list[str]) -> dict[str, list[list[str]] | list[str]]:
+    header_index = _markdown_header_row_index(lines)
     rows = [_split_table_row(line) for line in lines if not TABLE_SEPARATOR_RE.match(line)]
     if not rows:
         return {"columns": [], "rows": []}
-    header_index = 0
-    if len(rows) > 1 and _looks_like_table_title_row(rows[0]):
-        header_index = 1
-    columns = [_clean_column(cell, index) for index, cell in enumerate(rows[header_index])]
-    body_rows = rows[header_index + 1 :]
-    if not columns:
-        columns = [f"Column {index + 1}" for index in range(max((len(row) for row in body_rows), default=0))]
+    if header_index is None:
+        body_rows = rows
+        columns = [
+            f"Column {index + 1}"
+            for index in range(max((len(row) for row in body_rows), default=0))
+        ]
+    else:
+        columns = [
+            _clean_column(cell, index) for index, cell in enumerate(rows[header_index])
+        ]
+        body_rows = rows[header_index + 1 :]
+        if not columns:
+            columns = [
+                f"Column {index + 1}"
+                for index in range(max((len(row) for row in body_rows), default=0))
+            ]
     normalized_rows = [
         [*row, *([""] * (len(columns) - len(row)))]
         for row in body_rows
@@ -476,15 +486,17 @@ def _parse_table_lines(lines: list[str]) -> dict[str, list[list[str]] | list[str
     return {"columns": columns, "rows": [row[: len(columns)] for row in normalized_rows]}
 
 
+def _markdown_header_row_index(lines: list[str]) -> int | None:
+    non_separator_rows = 0
+    for line in lines:
+        if TABLE_SEPARATOR_RE.match(line):
+            return max(non_separator_rows - 1, 0)
+        non_separator_rows += 1
+    return None
+
+
 def _split_table_row(line: str) -> list[str]:
     return [cell.strip() for cell in line.strip().strip("|").split("|")]
-
-
-def _looks_like_table_title_row(row: list[str]) -> bool:
-    non_empty = [cell for cell in row if cell.strip()]
-    if len(non_empty) <= 1 and len(row) > 1:
-        return True
-    return len(non_empty) < max(1, len(row) // 2)
 
 
 def _clean_column(cell: str, index: int) -> str:

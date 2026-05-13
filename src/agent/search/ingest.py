@@ -8,7 +8,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
-from agent.search.docx_extract import extract_docx
+from agent.search.docx_extract import ExtractedBlock, extract_docx
 from agent.search.index_contracts import (
     ARTIFACT_CONTRACT_VERSION,
     INGEST_MANIFEST_ARTIFACT_TYPE,
@@ -56,17 +56,27 @@ def _markdown_for_doc(doc: NormalizedDocument) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def _content_to_markdown(paragraphs: list[str], tables: list[list[list[str]]]) -> str:
+def _content_to_markdown(blocks: list[ExtractedBlock]) -> str:
     lines: list[str] = []
-    if paragraphs:
-        lines.extend(paragraphs)
-    for index, table in enumerate(tables, start=1):
-        lines.extend(["", f"### Table {index}"])
+    table_index = 0
+    for block in blocks:
+        if block.kind == "paragraph":
+            if lines and lines[-1] != "":
+                lines.append("")
+            lines.append(block.text)
+            continue
+        if block.kind != "table":
+            continue
+        table_index += 1
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.append(f"### Table {table_index}")
+        table = block.table
         max_width = max((len(row) for row in table), default=0)
         for row_index, row in enumerate(table):
             padded = [*row, *([""] * (max_width - len(row)))]
             lines.append("| " + " | ".join(padded) + " |")
-            if row_index == 0 and max_width:
+            if row_index == 0 and max_width and block.table_has_header:
                 lines.append("| " + " | ".join(["---"] * max_width) + " |")
     return "\n".join(line for line in lines if line is not None).strip()
 
@@ -91,7 +101,7 @@ def ingest_corpus(zip_path: Path, output_dir: Path) -> dict[str, object]:
                 continue
             data = archive.read(info)
             extracted = extract_docx(data)
-            content = _content_to_markdown(extracted.paragraphs, extracted.tables)
+            content = _content_to_markdown(extracted.blocks)
             if not content.strip():
                 metadata_only.append(name)
                 extracted.warnings.append("empty_body_metadata_only")
