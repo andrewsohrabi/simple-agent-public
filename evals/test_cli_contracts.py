@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import agent.cli as chat_cli
 import agent.search.cli as search_cli
+from agent.config import SearchConfig
 
 
 SEARCH_CALLS = []
@@ -87,6 +88,48 @@ def test_normalize_cli_input_strips_transcript_prefixes():
         assert trace["raw_input"] == raw
         assert trace["normalized_input"] == expected
         assert trace["input_prefix_stripped"] is True
+
+
+def test_build_index_honors_configured_hash_embeddings(monkeypatch, tmp_path, capsys):
+    (tmp_path / "ingest_manifest.json").write_text(
+        json.dumps({"source_sha256": "hash", "documents": []}),
+        encoding="utf-8",
+    )
+    captured = {}
+
+    class FakeHashProvider:
+        provider_name = "hash"
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class FakeOpenAIProvider:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("build_index_main should honor config.use_hash_embeddings")
+
+    class FakeVectorIndex:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def build(self, chunks, provider, *, corpus_hash):
+            captured["provider_name"] = provider.provider_name
+            captured["corpus_hash"] = corpus_hash
+            return {"embedding_provider": provider.provider_name}
+
+    monkeypatch.setattr(search_cli, "load_config", lambda: SearchConfig(
+        index_dir=tmp_path,
+        use_hash_embeddings=True,
+    ))
+    monkeypatch.setattr(search_cli, "HashEmbeddingProvider", FakeHashProvider)
+    monkeypatch.setattr(search_cli, "OpenAIEmbeddingProvider", FakeOpenAIProvider)
+    monkeypatch.setattr(search_cli, "LocalVectorIndex", FakeVectorIndex)
+    monkeypatch.setattr(search_cli, "chunks_from_manifest", lambda manifest, config: [])
+    monkeypatch.setattr("sys.argv", ["build-qms-index"])
+
+    search_cli.build_index_main()
+
+    assert captured == {"provider_name": "hash", "corpus_hash": "hash"}
+    assert json.loads(capsys.readouterr().out)["embedding_provider"] == "hash"
 
 
 def test_qms_followup_detection_uses_real_followup_cues():

@@ -46,13 +46,7 @@ def test_stats_exposes_model_and_index_configuration():
     reranker = data["reranker"]
     assert reranker["enabled"] is True
     assert reranker["configured_model"] == "Qwen/Qwen3-Reranker-4B"
-    assert reranker["backend"] in {
-        "sentence_transformers_cross_encoder",
-        "deterministic_fallback",
-    }
-    if reranker["backend"] == "deterministic_fallback":
-        assert reranker["warning"] == "real_reranker_unavailable"
-        assert reranker["fallback_reason"]
+    assert reranker["backend"] == "not_loaded"
 
 
 def test_index_status_alias_exposes_stats():

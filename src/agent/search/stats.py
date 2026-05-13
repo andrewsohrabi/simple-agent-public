@@ -4,7 +4,7 @@ from pathlib import Path
 
 from agent.config import SearchConfig
 from agent.search.faiss_store import LocalVectorIndex
-from agent.search.rerank import LocalReranker
+from agent.search.rerank import configured_reranker_status
 from agent.search.sqlite_store import SearchStore
 
 
@@ -44,5 +44,5 @@ def collect_stats(config: SearchConfig) -> dict[str, object]:
         "vector_index": vector_stats,
         "artifact_validation": vector_stats.get("validation", {}),
         "hosted_file_search": hosted,
-        "reranker": LocalReranker(config).status(),
+        "reranker": configured_reranker_status(config),
     }

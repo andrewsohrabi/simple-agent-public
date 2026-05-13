@@ -246,3 +246,24 @@ def test_collect_stats_exposes_artifact_validation(tmp_path):
 
     assert stats["artifact_validation"]["ok"] is True
     assert stats["vector_index"]["validation"]["ok"] is True
+
+
+def test_collect_stats_does_not_instantiate_reranker(tmp_path, monkeypatch):
+    config = SearchConfig(
+        index_dir=tmp_path,
+        corpus_zip=tmp_path / "missing.zip",
+        openai_vector_store_state=tmp_path / "openai-state.json",
+        reranker_enabled=True,
+    )
+
+    class ExplodingReranker:
+        def __init__(self, *_args, **_kwargs):
+            raise AssertionError("stats collection should not load the reranker backend")
+
+    monkeypatch.setattr("agent.search.stats.LocalReranker", ExplodingReranker, raising=False)
+
+    stats = collect_stats(config)
+
+    assert stats["reranker"]["enabled"] is True
+    assert stats["reranker"]["backend"] == "not_loaded"
+    assert stats["reranker"]["configured_model"] == config.reranker_model

@@ -59,7 +59,7 @@ def build_index_main() -> None:
     chunks = chunks_from_manifest(manifest, config=config)
     provider = (
         HashEmbeddingProvider(config.embedding_dimensions, model=config.embedding_model)
-        if args.hash_embeddings
+        if args.hash_embeddings or config.use_hash_embeddings
         else OpenAIEmbeddingProvider(config)
     )
     vector_index = LocalVectorIndex(index_dir, config)

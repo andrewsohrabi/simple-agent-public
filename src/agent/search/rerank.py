@@ -94,6 +94,19 @@ class _CrossEncoderBackend:
         return [(hit, float(score)) for score, hit in ranked[:top_k]]
 
 
+def configured_reranker_status(
+    config: SearchConfig, *, backend: str = "not_loaded"
+) -> dict[str, object]:
+    return {
+        "enabled": config.reranker_enabled,
+        "configured_model": config.reranker_model,
+        "backend": backend if config.reranker_enabled else "disabled",
+        "top_n_candidates": config.reranker_top_n_candidates,
+        "top_k": config.reranker_top_k,
+        "max_length": config.reranker_max_length,
+    }
+
+
 class LocalReranker:
     """Local reranker with optional CrossEncoder and deterministic fallback."""
 
@@ -189,14 +202,7 @@ class LocalReranker:
         )
 
     def status(self) -> dict[str, object]:
-        status = {
-            "enabled": self.config.reranker_enabled,
-            "configured_model": self.config.reranker_model,
-            "backend": self.backend if self.config.reranker_enabled else "disabled",
-            "top_n_candidates": self.config.reranker_top_n_candidates,
-            "top_k": self.config.reranker_top_k,
-            "max_length": self.config.reranker_max_length,
-        }
+        status = configured_reranker_status(self.config, backend=self.backend)
         if self._warning:
             status["warning"] = self._warning
         if self._fallback_reason:
