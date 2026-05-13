@@ -130,6 +130,12 @@ def test_query_plan_obsolete_scope_is_explicit():
     obsolete_plan = plan_query("Find obsolete bill of materials evidence for MX1.")
     assert obsolete_plan.include_obsolete is True
 
+    not_obsolete_plan = plan_query("How many documents are not obsolete?")
+    assert not_obsolete_plan.include_obsolete is False
+
+    non_obsolete_plan = plan_query("List non-obsolete verification protocols.")
+    assert non_obsolete_plan.include_obsolete is False
+
     historical_plan = plan_query("Find historical bill of materials evidence for MX1.")
     assert historical_plan.include_obsolete is True
 

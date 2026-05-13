@@ -231,6 +231,25 @@ def test_signed_versus_unsigned_sql_list_keeps_both_signature_states(tmp_path):
     assert any(not document["is_signed"] for document in documents)
 
 
+def test_non_obsolete_sql_count_uses_active_scope(tmp_path):
+    service = _service(tmp_path)
+
+    result = service.search("How many documents are not obsolete?", mode="local")
+
+    assert result["query_plan"]["include_obsolete"] is False
+    assert result["retrieval_backend"] == "sql_inventory"
+    assert "Count: 4 matching document revisions" in result["answer"]
+    assert result["retrieved_documents"]
+    assert all(
+        not document["metadata"]["is_obsolete"]
+        for document in result["retrieved_documents"]
+    )
+    assert ("BOM-055", "F") not in {
+        (document["doc_id"], document["revision"])
+        for document in result["retrieved_documents"]
+    }
+
+
 def test_unsigned_title_ranked_documents_do_not_use_signed_filter(tmp_path):
     service = _service(tmp_path)
 

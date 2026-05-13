@@ -9,7 +9,7 @@ from agent.search.embeddings import HashEmbeddingProvider, OpenAIEmbeddingProvid
 from agent.search.faiss_store import LocalVectorIndex
 from agent.search.hybrid import HybridSearchService
 from agent.search.openai_file_search import OpenAIFileSearch
-from agent.search.query_filters import requested_signature_filter
+from agent.search.query_filters import requested_obsolete_filter, requested_signature_filter
 from agent.search.query_expansion import expand_query
 from agent.search.query_plan import QueryPlan, plan_query
 from agent.search.schema import SearchHit
@@ -188,12 +188,12 @@ class QmsSearchService:
                 limit=limit,
             )
 
-        lower = plan.query.lower()
         clauses: list[str] = []
         values: list[object] = []
-        if "obsolete" in lower:
+        obsolete_filter = requested_obsolete_filter(plan.query)
+        if obsolete_filter is True:
             clauses.append("is_obsolete = 1")
-        elif not plan.include_obsolete:
+        elif obsolete_filter is False or not plan.include_obsolete:
             clauses.append("is_obsolete = 0")
         signature_filter = requested_signature_filter(plan.query)
         if signature_filter is not None:

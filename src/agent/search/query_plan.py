@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+from agent.search.query_filters import requested_obsolete_filter
+
 
 DOC_ID_PATTERN = re.compile(
     r"\b(?:[A-Z0-9]{2,5}-(?:P\d{2}|SWV)?-?\d{2,3}|BOM-\d{3}|ECR-\d{3}|ESF-\d{3})\b",
@@ -73,12 +75,15 @@ def plan_query(query: str) -> QueryPlan:
         if rev_pair_match
         else None
     )
-    include_obsolete = any(
+    obsolete_filter = requested_obsolete_filter(q)
+    include_obsolete = obsolete_filter is True or any(
         term in lower
         for term in ["obsolete", "historical", "older revision", "all revision", "all version"]
     )
     if "revisions" in lower or "revision chains" in lower:
         include_obsolete = True
+    if obsolete_filter is False:
+        include_obsolete = False
     asks_all = any(
         term in lower
         for term in [

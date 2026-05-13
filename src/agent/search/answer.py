@@ -17,7 +17,7 @@ from agent.search.citations import (
     validate_citations,
 )
 from agent.search.ingest import load_ingest_manifest
-from agent.search.query_filters import requested_signature_filter
+from agent.search.query_filters import requested_obsolete_filter, requested_signature_filter
 from agent.search.query_plan import QueryPlan
 from agent.search.schema import SearchHit
 from agent.search.sqlite_store import SearchStore
@@ -843,12 +843,12 @@ class SearchAnswerer:
                 include_obsolete=plan.include_obsolete,
                 limit=limit,
             )
-        lower = plan.query.lower()
         clauses: list[str] = []
         values: list[object] = []
-        if "obsolete" in lower:
+        obsolete_filter = requested_obsolete_filter(plan.query)
+        if obsolete_filter is True:
             clauses.append("is_obsolete = 1")
-        elif not plan.include_obsolete:
+        elif obsolete_filter is False or not plan.include_obsolete:
             clauses.append("is_obsolete = 0")
         signature_filter = requested_signature_filter(plan.query)
         if signature_filter is not None:
@@ -887,12 +887,12 @@ class SearchAnswerer:
                 latest_only=plan.latest_only,
                 include_obsolete=plan.include_obsolete,
             )
-        lower = plan.query.lower()
         clauses: list[str] = []
         values: list[object] = []
-        if "obsolete" in lower:
+        obsolete_filter = requested_obsolete_filter(plan.query)
+        if obsolete_filter is True:
             clauses.append("is_obsolete = 1")
-        elif not plan.include_obsolete:
+        elif obsolete_filter is False or not plan.include_obsolete:
             clauses.append("is_obsolete = 0")
         signature_filter = requested_signature_filter(plan.query)
         if signature_filter is not None:
