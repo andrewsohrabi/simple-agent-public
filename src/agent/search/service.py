@@ -9,7 +9,11 @@ from agent.search.embeddings import HashEmbeddingProvider, OpenAIEmbeddingProvid
 from agent.search.faiss_store import LocalVectorIndex
 from agent.search.hybrid import HybridSearchService
 from agent.search.openai_file_search import OpenAIFileSearch
-from agent.search.query_filters import requested_obsolete_filter, requested_signature_filter
+from agent.search.query_filters import (
+    document_scope_clauses,
+    requested_obsolete_filter,
+    requested_signature_filter,
+)
 from agent.search.query_expansion import expand_query
 from agent.search.query_plan import QueryPlan, plan_query
 from agent.search.schema import SearchHit
@@ -178,29 +182,14 @@ class QmsSearchService:
                 include_obsolete=plan.include_obsolete,
                 limit=max(limit, 500),
             )
-        if plan.doc_id or plan.prefix:
-            return self.store.find_documents(
-                doc_id=plan.doc_id,
-                prefix=plan.prefix if not plan.doc_id else None,
-                revision=plan.revision,
-                latest_only=plan.latest_only,
-                include_obsolete=plan.include_obsolete,
-                limit=limit,
-            )
-
-        clauses: list[str] = []
-        values: list[object] = []
-        obsolete_filter = requested_obsolete_filter(plan.query)
-        if obsolete_filter is True:
-            clauses.append("is_obsolete = 1")
-        elif obsolete_filter is False or not plan.include_obsolete:
-            clauses.append("is_obsolete = 0")
-        signature_filter = requested_signature_filter(plan.query)
-        if signature_filter is not None:
-            clauses.append("is_signed = ?")
-            values.append(int(signature_filter))
-        if plan.latest_only:
-            clauses.append("is_latest = 1")
+        clauses, values = document_scope_clauses(
+            query=plan.query,
+            doc_id=plan.doc_id,
+            prefix=plan.prefix if not plan.doc_id else None,
+            revision=plan.revision,
+            latest_only=plan.latest_only,
+            include_obsolete=plan.include_obsolete,
+        )
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         query = f"""
             SELECT *

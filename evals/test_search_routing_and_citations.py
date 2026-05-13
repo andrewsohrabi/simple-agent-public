@@ -231,6 +231,37 @@ def test_signed_versus_unsigned_sql_list_keeps_both_signature_states(tmp_path):
     assert any(not document["is_signed"] for document in documents)
 
 
+def test_scoped_sql_list_applies_filters_to_prefix_and_doc_id_fast_paths(tmp_path):
+    service = _service(tmp_path)
+    _insert_document(
+        service.store,
+        doc_id="VVPR-P01-180",
+        revision="A",
+        prefix="VVPR",
+        title="Signed MX1 Verification Protocol",
+        rank=1,
+        latest=True,
+        signed=True,
+        text="Signed verification protocol that should not satisfy unsigned scope.",
+    )
+
+    unsigned_protocols = service._documents_for_sql_plan(
+        plan_query("List unsigned verification protocols"),
+        limit=10,
+    )
+    obsolete_bom = service._documents_for_sql_plan(
+        plan_query("List obsolete BOM revisions for BOM-055"),
+        limit=10,
+    )
+
+    assert [document["doc_id"] for document in unsigned_protocols] == ["VVPR-P01-179"]
+    assert all(not document["is_signed"] for document in unsigned_protocols)
+    assert [(document["doc_id"], document["revision"]) for document in obsolete_bom] == [
+        ("BOM-055", "F")
+    ]
+    assert all(document["is_obsolete"] for document in obsolete_bom)
+
+
 def test_non_obsolete_sql_count_uses_active_scope(tmp_path):
     service = _service(tmp_path)
 

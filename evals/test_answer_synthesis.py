@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import date as real_date
 import json
 
+import agent.search.answer as answer_module
 from agent.config import SearchConfig
 from agent.search.answer import SearchAnswerer
-from agent.search.query_plan import QueryPlan
+from agent.search.query_plan import QueryPlan, plan_query
 from agent.search.schema import SearchHit
 from agent.search.sqlite_store import SearchStore
 
@@ -73,6 +75,97 @@ def _store(tmp_path) -> SearchStore:
             ),
         )
     return store
+
+
+def _insert_metadata_document(
+    store: SearchStore,
+    *,
+    doc_id: str,
+    revision: str = "A",
+    prefix: str,
+    title: str,
+    rank: int = 1,
+    latest: bool = True,
+    signed: bool = False,
+    obsolete: bool = False,
+    markdown_path=None,
+) -> None:
+    filename = f"{doc_id}_rev-{revision}.docx"
+    with store.connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO documents
+            (doc_id, revision, prefix, title, revision_rank, canonical_doc_key,
+             is_latest, is_signed, is_obsolete, filename, source_path, software_version,
+             markdown_path, sha256)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                doc_id,
+                revision,
+                prefix,
+                title,
+                rank,
+                doc_id,
+                int(latest),
+                int(signed),
+                int(obsolete),
+                filename,
+                filename,
+                None,
+                str(markdown_path or f"markdown/{doc_id}_rev-{revision}.md"),
+                f"sha-{doc_id}-{revision}",
+            ),
+        )
+        conn.execute(
+            """
+            INSERT INTO revisions
+            (canonical_doc_key, doc_id, revision, revision_rank, is_latest, is_obsolete, filename)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (doc_id, doc_id, revision, rank, int(latest), int(obsolete), filename),
+        )
+
+
+def _insert_ecr_document(
+    store: SearchStore,
+    tmp_path,
+    *,
+    doc_id: str,
+    dco: str,
+    approval_date: str,
+) -> None:
+    markdown_path = tmp_path / f"{doc_id}.md"
+    markdown_path.write_text(
+        "\n".join(
+            [
+                f"# {doc_id}",
+                "Affected document: BOM-055.",
+                "",
+                "DOCUMENT APPROVALS",
+                "",
+                f"| | A | {dco} | Approved | QA | {approval_date} |",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _insert_metadata_document(
+        store,
+        doc_id=doc_id,
+        prefix="ECR",
+        title=f"Engineering Change Request {doc_id}",
+        signed=True,
+        markdown_path=markdown_path,
+    )
+
+
+def _freeze_answer_date(monkeypatch, year: int = 2026, month: int = 5, day: int = 13):
+    class FrozenDate(real_date):
+        @classmethod
+        def today(cls):
+            return cls(year, month, day)
+
+    monkeypatch.setattr(answer_module, "date", FrozenDate)
 
 
 def _hit() -> SearchHit:
@@ -255,6 +348,117 @@ def test_count_answer_uses_full_metadata_count_not_sample_limit(tmp_path):
 
     assert result["answer"].startswith("Count: 501 DOC document revisions.")
     assert len(result["retrieved_documents"]) == 40
+
+
+def test_scoped_count_answer_applies_signature_and_obsolete_filters(tmp_path):
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.initialize()
+    _insert_metadata_document(
+        store,
+        doc_id="VVPR-P01-179",
+        prefix="VVPR",
+        title="Unsigned Verification Protocol",
+        signed=False,
+    )
+    _insert_metadata_document(
+        store,
+        doc_id="VVPR-P01-180",
+        prefix="VVPR",
+        title="Signed Verification Protocol",
+        signed=True,
+    )
+    _insert_metadata_document(
+        store,
+        doc_id="BOM-055",
+        revision="F",
+        prefix="BOM",
+        title="Obsolete BOM",
+        rank=6,
+        latest=False,
+        obsolete=True,
+    )
+    _insert_metadata_document(
+        store,
+        doc_id="BOM-055",
+        revision="G",
+        prefix="BOM",
+        title="Active BOM",
+        rank=7,
+        latest=True,
+    )
+    answerer = SearchAnswerer(store, config=SearchConfig(), synthesizer=None)
+
+    unsigned = answerer.answer(
+        "How many unsigned verification protocols are present?",
+        plan_query("How many unsigned verification protocols are present?"),
+        [],
+    )
+    obsolete = answerer.answer(
+        "How many obsolete BOM revisions are present for BOM-055?",
+        plan_query("How many obsolete BOM revisions are present for BOM-055?"),
+        [],
+    )
+
+    assert unsigned["answer"].startswith("Count: 1 VVPR document revisions.")
+    assert [doc["doc_id"] for doc in unsigned["retrieved_documents"]] == [
+        "VVPR-P01-179"
+    ]
+    assert all(
+        not doc["metadata"]["is_signed"] for doc in unsigned["retrieved_documents"]
+    )
+    assert obsolete["answer"].startswith("Count: 1 BOM-055 document revisions.")
+    assert [(doc["doc_id"], doc["revision"]) for doc in obsolete["retrieved_documents"]] == [
+        ("BOM-055", "F")
+    ]
+    assert all(doc["metadata"]["is_obsolete"] for doc in obsolete["retrieved_documents"])
+
+
+def test_ecr_status_honors_requested_filing_year(tmp_path, monkeypatch):
+    _freeze_answer_date(monkeypatch)
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.initialize()
+    _insert_ecr_document(
+        store,
+        tmp_path,
+        doc_id="ECR-231",
+        dco="23-101",
+        approval_date="2023-05-01",
+    )
+    _insert_ecr_document(
+        store,
+        tmp_path,
+        doc_id="ECR-241",
+        dco="24-101",
+        approval_date="2024-05-01",
+    )
+    answerer = SearchAnswerer(store, config=SearchConfig(), synthesizer=None)
+    query = "Which ECRs were filed in 2023?"
+
+    result = answerer.answer(query, plan_query(query), [])
+
+    assert "2023-01-01 to 2023-12-31" in result["answer"]
+    assert "ECR-231" in result["answer"]
+    assert "ECR-241" not in result["answer"]
+
+
+def test_ecr_status_parses_non_2024_dco_approval_rows(tmp_path, monkeypatch):
+    _freeze_answer_date(monkeypatch)
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.initialize()
+    _insert_ecr_document(
+        store,
+        tmp_path,
+        doc_id="ECR-251",
+        dco="25-123",
+        approval_date="2025-06-01",
+    )
+    answerer = SearchAnswerer(store, config=SearchConfig(), synthesizer=None)
+    query = "Show me all ECRs filed in the last year and their status"
+
+    result = answerer.answer(query, plan_query(query), [])
+
+    assert "DCO 25-123" in result["answer"]
+    assert "approval effective date 2025-06-01" in result["answer"]
 
 
 def test_ingest_manifest_count_reports_content_bearing_metric(tmp_path):

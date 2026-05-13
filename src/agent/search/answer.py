@@ -17,7 +17,7 @@ from agent.search.citations import (
     validate_citations,
 )
 from agent.search.ingest import load_ingest_manifest
-from agent.search.query_filters import requested_obsolete_filter, requested_signature_filter
+from agent.search.query_filters import document_scope_clauses
 from agent.search.query_plan import QueryPlan
 from agent.search.schema import SearchHit
 from agent.search.sqlite_store import SearchStore
@@ -466,24 +466,24 @@ class SearchAnswerer:
             limit=100,
         )
         records = [_ecr_record(doc) for doc in docs]
-        today = date.today()
-        window_start = today - timedelta(days=365)
+        window_start, window_end, policy, window_label = _ecr_status_window(plan.query)
         in_window = [
             record
             for record in records
-            if record["approval_date"] and window_start <= record["approval_date"] <= today
+            if record["approval_date"]
+            and window_start <= record["approval_date"] <= window_end
         ]
         if in_window:
             lines = [
-                f"Using current-date policy, {len(in_window)} ECRs were filed/effective in the last year "
-                f"({window_start.isoformat()} to {today.isoformat()}):"
+                f"Using {policy}, {len(in_window)} ECRs were filed/effective {window_label} "
+                f"({window_start.isoformat()} to {window_end.isoformat()}):"
             ]
             for record in in_window:
                 lines.append(_format_ecr_record(record))
         else:
             lines = [
-                f"Using current-date policy, no ECRs have approval effective dates in the last year "
-                f"({window_start.isoformat()} to {today.isoformat()}).",
+                f"Using {policy}, no ECRs have approval effective dates {window_label} "
+                f"({window_start.isoformat()} to {window_end.isoformat()}).",
                 "Indexed active signed ECRs are outside that window:",
             ]
             for record in records:
@@ -834,28 +834,14 @@ class SearchAnswerer:
                     )
                 )
             return docs
-        if plan.doc_id or plan.prefix:
-            return self.store.find_documents(
-                doc_id=plan.doc_id,
-                prefix=plan.prefix if not plan.doc_id else None,
-                revision=plan.revision,
-                latest_only=plan.latest_only,
-                include_obsolete=plan.include_obsolete,
-                limit=limit,
-            )
-        clauses: list[str] = []
-        values: list[object] = []
-        obsolete_filter = requested_obsolete_filter(plan.query)
-        if obsolete_filter is True:
-            clauses.append("is_obsolete = 1")
-        elif obsolete_filter is False or not plan.include_obsolete:
-            clauses.append("is_obsolete = 0")
-        signature_filter = requested_signature_filter(plan.query)
-        if signature_filter is not None:
-            clauses.append("is_signed = ?")
-            values.append(int(signature_filter))
-        if plan.latest_only:
-            clauses.append("is_latest = 1")
+        clauses, values = document_scope_clauses(
+            query=plan.query,
+            doc_id=plan.doc_id,
+            prefix=plan.prefix if not plan.doc_id else None,
+            revision=plan.revision,
+            latest_only=plan.latest_only,
+            include_obsolete=plan.include_obsolete,
+        )
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         query = f"""
             SELECT *
@@ -879,27 +865,14 @@ class SearchAnswerer:
                     limit=1_000_000,
                 )
             )
-        if plan.doc_id or plan.prefix:
-            return self.store.count_documents(
-                doc_id=plan.doc_id,
-                prefix=plan.prefix if not plan.doc_id else None,
-                revision=plan.revision,
-                latest_only=plan.latest_only,
-                include_obsolete=plan.include_obsolete,
-            )
-        clauses: list[str] = []
-        values: list[object] = []
-        obsolete_filter = requested_obsolete_filter(plan.query)
-        if obsolete_filter is True:
-            clauses.append("is_obsolete = 1")
-        elif obsolete_filter is False or not plan.include_obsolete:
-            clauses.append("is_obsolete = 0")
-        signature_filter = requested_signature_filter(plan.query)
-        if signature_filter is not None:
-            clauses.append("is_signed = ?")
-            values.append(int(signature_filter))
-        if plan.latest_only:
-            clauses.append("is_latest = 1")
+        clauses, values = document_scope_clauses(
+            query=plan.query,
+            doc_id=plan.doc_id,
+            prefix=plan.prefix if not plan.doc_id else None,
+            revision=plan.revision,
+            latest_only=plan.latest_only,
+            include_obsolete=plan.include_obsolete,
+        )
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         with self.store.connect() as conn:
             row = conn.execute(
@@ -1115,7 +1088,7 @@ def _ecr_record(doc: dict[str, object]) -> dict[str, object]:
     approval_date = None
     dco = "unknown"
     match = re.search(
-        r"\|\s*\|\s*[A-Z]\s*\|\s*(24-\d+)\s*\|[^|]*\|[^|]*\|\s*(\d{4}-\d{2}-\d{2})",
+        r"\|\s*\|\s*[A-Z]\s*\|\s*(\d{2}-\d+)\s*\|[^|]*\|[^|]*\|\s*(\d{4}-\d{2}-\d{2})",
         markdown,
     )
     if match:
@@ -1137,6 +1110,21 @@ def _ecr_record(doc: dict[str, object]) -> dict[str, object]:
         "dco": dco,
         "affected": affected[:8],
     }
+
+
+def _ecr_status_window(query: str) -> tuple[date, date, str, str]:
+    year_match = re.search(r"\b(?:in|during)\s+((?:19|20)\d{2})\b", query, re.I)
+    if year_match:
+        year = int(year_match.group(1))
+        return (
+            date(year, 1, 1),
+            date(year, 12, 31),
+            "requested-year policy",
+            f"in {year}",
+        )
+    today = date.today()
+    window_start = today - timedelta(days=365)
+    return window_start, today, "current-date policy", "in the last year"
 
 
 def _format_ecr_record(record: dict[str, object]) -> str:
