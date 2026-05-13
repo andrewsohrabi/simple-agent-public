@@ -118,6 +118,7 @@ def test_ingest_corpus_records_metadata_only_warning_for_empty_docx(tmp_path):
     assert manifest["artifact_type"] == INGEST_MANIFEST_ARTIFACT_TYPE
     assert manifest["artifact_contract_version"] == ARTIFACT_CONTRACT_VERSION
     assert manifest["schema_version"] == INGEST_MANIFEST_SCHEMA_VERSION
+    assert manifest["skipped_empty_count"] == 1
     assert manifest["metadata_only_count"] == 1
     assert manifest["documents"][0]["warnings"] == ["empty_body_metadata_only"]
     assert manifest["documents"][0]["family"] == "BOM"
@@ -140,8 +141,8 @@ def test_ingest_corpus_extracts_real_docx(tmp_path):
         return
     manifest = ingest_corpus(zip_path, tmp_path)
     assert manifest["document_count"] == 189
-    assert manifest["skipped_empty_count"] == 0
     assert manifest["metadata_only_count"] > 0
+    assert manifest["skipped_empty_count"] == manifest["metadata_only_count"]
     assert Path(manifest["normalized_dir"]).exists()
     assert any(doc["doc_id"].startswith("BOM") for doc in manifest["documents"])
     assert all("__MACOSX/" not in doc["source_path"] for doc in manifest["documents"])

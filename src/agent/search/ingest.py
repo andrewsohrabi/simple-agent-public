@@ -132,7 +132,7 @@ def ingest_corpus(zip_path: Path, output_dir: Path) -> dict[str, object]:
         "source_zip": str(zip_path),
         "source_sha256": zip_hash,
         "document_count": len(normalized_docs),
-        "skipped_empty_count": 0,
+        "skipped_empty_count": len(metadata_only),
         "metadata_only_count": len(metadata_only),
         "metadata_only": metadata_only,
         "normalized_dir": str(normalized_dir),

@@ -72,6 +72,34 @@ def test_hosted_sync_reuses_matching_state_without_openai_client(tmp_path):
     assert result == state
 
 
+def test_hosted_sync_recovers_from_invalid_state_json(tmp_path, monkeypatch):
+    normalized_dir = tmp_path / "normalized"
+    normalized_dir.mkdir()
+    state_path = tmp_path / "openai" / "vector_store_state.json"
+    state_path.parent.mkdir()
+    state_path.write_text("{", encoding="utf-8")
+
+    class VectorStores:
+        def create(self, *, name):
+            return types.SimpleNamespace(id="vs_recovered")
+
+    class FakeOpenAI:
+        def __init__(self):
+            self.vector_stores = VectorStores()
+
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=FakeOpenAI))
+    config = SearchConfig(
+        index_dir=tmp_path,
+        openai_vector_store_state=state_path,
+    )
+
+    state = sync_openai_vector_store(config, normalized_dir, corpus_hash="hash")
+
+    assert state["status"] == "synced"
+    assert state["vector_store_id"] == "vs_recovered"
+    assert state["file_count"] == 0
+
+
 def test_hosted_sync_uploads_only_normalized_markdown_with_mock_openai(tmp_path, monkeypatch):
     normalized_dir = tmp_path / "normalized"
     normalized_dir.mkdir()
@@ -223,6 +251,7 @@ def test_openai_file_search_maps_hosted_result_to_local_citation_metadata(
         def search(self, vector_store_id, **kwargs):
             assert vector_store_id == "vs_123"
             assert kwargs["query"] == "top assembly"
+            assert kwargs["max_num_results"] == 3
             return SearchResults()
 
     class FakeOpenAI:
@@ -243,3 +272,42 @@ def test_openai_file_search_maps_hosted_result_to_local_citation_metadata(
     assert hits[0].metadata["hosted_annotations"] == [
         {"type": "file_citation", "file_id": "file_1"}
     ]
+
+
+def test_openai_file_search_clamps_hosted_result_limit(tmp_path, monkeypatch):
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.initialize()
+    state_path = tmp_path / "openai" / "vector_store_state.json"
+    state_path.parent.mkdir()
+    state_path.write_text(
+        json.dumps(
+            {
+                "status": "synced",
+                "vector_store_id": "vs_123",
+                "files": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    max_result_calls = []
+
+    class SearchResults:
+        data = []
+
+    class VectorStores:
+        def search(self, vector_store_id, **kwargs):
+            assert vector_store_id == "vs_123"
+            max_result_calls.append(kwargs["max_num_results"])
+            return SearchResults()
+
+    class FakeOpenAI:
+        def __init__(self):
+            self.vector_stores = VectorStores()
+
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=FakeOpenAI))
+    config = SearchConfig(index_dir=tmp_path, openai_vector_store_state=state_path)
+
+    OpenAIFileSearch(config).search("top assembly", store, limit=0)
+    OpenAIFileSearch(config).search("top assembly", store, limit=99)
+
+    assert max_result_calls == [1, 50]

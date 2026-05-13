@@ -48,7 +48,7 @@ class OpenAIFileSearch:
         response = client.vector_stores.search(
             str(vector_store_id),
             query=query,
-            max_num_results=limit,
+            max_num_results=_clamp_hosted_limit(limit),
         )
         file_map = {
             str(item.get("file_id")): item
@@ -182,6 +182,10 @@ def _hosted_score(hosted: dict[str, object] | None, default: float) -> float:
     if isinstance(score, int | float):
         return float(score)
     return default
+
+
+def _clamp_hosted_limit(limit: int) -> int:
+    return min(max(int(limit), 1), 50)
 
 
 def metadata_from_markdown(path: Path) -> dict[str, object]:

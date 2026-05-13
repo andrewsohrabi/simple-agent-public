@@ -23,9 +23,7 @@ def sync_openai_vector_store(
     source mappings. It never stores or prints API keys.
     """
     config.openai_vector_store_state.parent.mkdir(parents=True, exist_ok=True)
-    state: dict[str, object] = {}
-    if config.openai_vector_store_state.exists():
-        state = json.loads(config.openai_vector_store_state.read_text(encoding="utf-8"))
+    state = _load_existing_state(config.openai_vector_store_state)
     markdown_paths = sorted(normalized_dir.glob("*.md"))
     file_signatures = [_file_signature(path) for path in markdown_paths]
     if (
@@ -117,6 +115,16 @@ def _file_signature(path: Path) -> dict[str, object]:
         "sha256": digest,
         "bytes": path.stat().st_size,
     }
+
+
+def _load_existing_state(path: Path) -> dict[str, object]:
+    if not path.exists():
+        return {}
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    return state if isinstance(state, dict) else {}
 
 
 def _state_payload(
