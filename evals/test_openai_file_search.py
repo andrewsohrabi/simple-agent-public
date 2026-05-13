@@ -2,6 +2,8 @@ import json
 import sys
 import types
 
+import pytest
+
 from agent.config import SearchConfig
 from agent.search.hosted_sync import sync_openai_vector_store
 from agent.search.openai_file_search import OpenAIFileSearch, metadata_from_markdown
@@ -230,6 +232,66 @@ def test_hosted_sync_cleans_up_previous_hosted_assets_after_success(tmp_path, mo
     assert calls["deleted_files"] == ["file_old"]
     assert state["previous_cleanup"]["deleted_vector_store_id"] == "vs_old"
     assert state["previous_cleanup"]["deleted_file_ids"] == ["file_old"]
+
+
+def test_hosted_sync_cleans_up_new_assets_after_sync_failure(tmp_path, monkeypatch):
+    normalized_dir = tmp_path / "normalized"
+    normalized_dir.mkdir()
+    markdown = normalized_dir / "BOM-055_rev-G.md"
+    markdown.write_text(
+        "\n".join(
+            [
+                "# BOM-055 Rev G: MX1 Top-level assembly",
+                "- Document ID: BOM-055",
+                "- Revision: G",
+                "- Prefix: BOM",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    calls = {"deleted_vector_stores": [], "deleted_files": []}
+
+    class Files:
+        def create(self, *, file, purpose):
+            return types.SimpleNamespace(id="file_new")
+
+        def delete(self, file_id):
+            calls["deleted_files"].append(file_id)
+
+    class VectorStoreFiles:
+        def create_and_poll(self, **kwargs):
+            raise RuntimeError("upload failed")
+
+    class VectorStores:
+        files = VectorStoreFiles()
+
+        def create(self, *, name):
+            return types.SimpleNamespace(id="vs_new")
+
+        def delete(self, vector_store_id):
+            calls["deleted_vector_stores"].append(vector_store_id)
+
+    class FakeOpenAI:
+        def __init__(self):
+            self.files = Files()
+            self.vector_stores = VectorStores()
+
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=FakeOpenAI))
+    state_path = tmp_path / "openai" / "vector_store_state.json"
+    config = SearchConfig(
+        index_dir=tmp_path,
+        openai_vector_store_state=state_path,
+    )
+
+    with pytest.raises(RuntimeError, match="upload failed"):
+        sync_openai_vector_store(config, normalized_dir, corpus_hash="hash")
+
+    assert calls["deleted_vector_stores"] == ["vs_new"]
+    assert calls["deleted_files"] == ["file_new"]
+    failed_state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert failed_state["status"] == "failed"
+    assert failed_state["failure_cleanup"]["deleted_vector_store_id"] == "vs_new"
+    assert failed_state["failure_cleanup"]["deleted_file_ids"] == ["file_new"]
 
 
 def test_openai_file_search_maps_hosted_result_to_local_citation_metadata(

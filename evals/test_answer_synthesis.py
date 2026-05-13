@@ -206,3 +206,85 @@ def test_count_answer_path_avoids_answer_synthesis(tmp_path):
 
     assert result["answer"].startswith("Count: 1 BOM-055 document revisions.")
     assert synthesizer.calls == []
+
+
+def test_count_answer_uses_full_metadata_count_not_sample_limit(tmp_path):
+    store = SearchStore(tmp_path / "qms.sqlite")
+    store.initialize()
+    with store.connect() as conn:
+        for index in range(501):
+            doc_id = f"DOC-{index:03}"
+            conn.execute(
+                """
+                INSERT INTO documents
+                (doc_id, revision, prefix, title, revision_rank, canonical_doc_key,
+                 is_latest, is_signed, is_obsolete, filename, source_path, software_version,
+                 markdown_path, sha256)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    doc_id,
+                    "A",
+                    "DOC",
+                    f"Document {index}",
+                    1,
+                    doc_id,
+                    1,
+                    0,
+                    0,
+                    f"{doc_id}.docx",
+                    f"qms/{doc_id}.docx",
+                    None,
+                    f"markdown/{doc_id}.md",
+                    f"sha-{doc_id}",
+                ),
+            )
+    answerer = SearchAnswerer(store, config=SearchConfig(), synthesizer=None)
+
+    result = answerer.answer(
+        "How many DOC records are present?",
+        _plan(
+            category="enumeration",
+            strategy="sql_count",
+            query="How many DOC records are present?",
+            prefix="DOC",
+            requires_count=True,
+        ),
+        [],
+    )
+
+    assert result["answer"].startswith("Count: 501 DOC document revisions.")
+    assert len(result["retrieved_documents"]) == 40
+
+
+def test_ingest_manifest_count_reports_content_bearing_metric(tmp_path):
+    store = _store(tmp_path)
+    index_dir = tmp_path / "index"
+    index_dir.mkdir()
+    (index_dir / "ingest_manifest.json").write_text(
+        json.dumps(
+            {
+                "document_count": 10,
+                "skipped_empty_count": 2,
+                "metadata_only_count": 2,
+            }
+        ),
+        encoding="utf-8",
+    )
+    answerer = SearchAnswerer(store, config=SearchConfig(index_dir=index_dir))
+
+    result = answerer.answer(
+        "How many non-empty DOCX records were ingested after ignoring empty documents?",
+        _plan(
+            category="enumeration",
+            strategy="sql_count",
+            query="How many non-empty DOCX records were ingested after ignoring empty documents?",
+            requires_count=True,
+            intent="ingest_manifest_count",
+        ),
+        [],
+    )
+
+    assert "Count: 8 non-empty content-bearing DOCX records ingested" in result["answer"]
+    assert "Total normalized DOCX records: 10" in result["answer"]
+    assert "10 non-empty DOCX records" not in result["answer"]

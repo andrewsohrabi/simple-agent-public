@@ -89,6 +89,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS chunk_fts USING fts5(
 """
 
 
+def _remove_sqlite_file_set(path: Path) -> None:
+    for suffix in ("", "-journal", "-wal", "-shm"):
+        path.with_name(f"{path.name}{suffix}").unlink(missing_ok=True)
+
+
 class SearchStore:
     REQUIRED_CHUNK_COLUMNS = {
         "chunk_id",
@@ -147,10 +152,24 @@ class SearchStore:
         *,
         config=None,
     ) -> list[Chunk]:
-        if self.db_path.exists():
-            self.db_path.unlink()
-        self.initialize()
         chunks = chunks_from_manifest(manifest, config=config)
+        temp_path = self.db_path.with_name(f"{self.db_path.name}.tmp")
+        _remove_sqlite_file_set(temp_path)
+        temp_store = SearchStore(temp_path)
+        try:
+            temp_store.initialize()
+            temp_store._replace_manifest_contents(manifest, chunks)
+            temp_path.replace(self.db_path)
+        except Exception:
+            _remove_sqlite_file_set(temp_path)
+            raise
+        return chunks
+
+    def _replace_manifest_contents(
+        self,
+        manifest: dict[str, object],
+        chunks: list[Chunk],
+    ) -> None:
         with self.connect() as conn:
             conn.execute("DELETE FROM chunk_fts")
             conn.execute("DELETE FROM chunks")
@@ -275,7 +294,6 @@ class SearchStore:
                         chunk.search_text,
                     ),
                 )
-        return chunks
 
     def stats(self) -> dict[str, object]:
         if not self.db_path.exists():
@@ -349,6 +367,39 @@ class SearchStore:
         with self.connect() as conn:
             rows = conn.execute(query, values).fetchall()
         return [dict(row) for row in rows]
+
+    def count_documents(
+        self,
+        *,
+        doc_id: str | None = None,
+        prefix: str | None = None,
+        title: str | None = None,
+        revision: str | None = None,
+        latest_only: bool = True,
+        include_obsolete: bool = False,
+    ) -> int:
+        clauses: list[str] = []
+        values: list[object] = []
+        if doc_id:
+            clauses.append("doc_id = ?")
+            values.append(doc_id.upper())
+        if prefix:
+            clauses.append("prefix = ?")
+            values.append(prefix.upper())
+        if title:
+            clauses.append("lower(title) LIKE ?")
+            values.append(f"%{title.lower()}%")
+        if revision:
+            clauses.append("revision = ?")
+            values.append(revision.upper())
+        elif latest_only:
+            clauses.append("is_latest = 1")
+        if not include_obsolete:
+            clauses.append("is_obsolete = 0")
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self.connect() as conn:
+            row = conn.execute(f"SELECT COUNT(*) FROM documents {where}", values).fetchone()
+        return int(row[0]) if row else 0
 
     def count_by_prefix(self, prefix: str, include_obsolete: bool = False) -> dict[str, object]:
         clauses = ["prefix = ?"]

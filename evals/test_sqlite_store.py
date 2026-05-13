@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from agent.config import SearchConfig
 from agent.search.ingest import ingest_corpus
 from agent.search.sqlite_store import SearchStore
@@ -116,6 +118,26 @@ def test_sqlite_store_fts_search_returns_empty_before_schema_initialized(tmp_pat
     store = SearchStore(tmp_path / "qms.sqlite")
 
     assert store.fts_search("release approval", limit=5) == []
+
+
+def test_sqlite_store_keeps_existing_index_when_manifest_load_fails(tmp_path):
+    store = SearchStore(tmp_path / "qms.sqlite")
+    config = SearchConfig(
+        min_chunk_tokens=1,
+        chunk_size_tokens=20,
+        max_chunk_tokens=40,
+        index_dir=tmp_path,
+    )
+    store.load_manifest(_manifest(tmp_path), config=config)
+    bad_manifest = _manifest(tmp_path)
+    del bad_manifest["documents"][0]["prefix"]
+
+    with pytest.raises(KeyError):
+        store.load_manifest(bad_manifest, config=config)
+
+    assert store.stats()["documents"] == 1
+    assert store.find_documents(doc_id="BOM-055", latest_only=True)
+    assert store.fts_search("release approval", limit=1)
 
 
 def test_sqlite_store_extracts_compact_3p_references(tmp_path):

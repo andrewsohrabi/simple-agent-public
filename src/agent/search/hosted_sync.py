@@ -44,12 +44,14 @@ def sync_openai_vector_store(
     vector_store_id = vector_store.id
 
     files = []
+    uploaded_file_ids: list[str] = []
     total = len(markdown_paths)
     try:
         for index, path in enumerate(markdown_paths, start=1):
             metadata = metadata_from_markdown(path)
             with path.open("rb") as handle:
                 uploaded = client.files.create(file=handle, purpose="assistants")
+            uploaded_file_ids.append(str(uploaded.id))
             client.vector_stores.files.create_and_poll(
                 vector_store_id=str(vector_store_id),
                 file_id=uploaded.id,
@@ -81,6 +83,11 @@ def sync_openai_vector_store(
                 flush=True,
             )
     except Exception as exc:
+        failure_cleanup = _cleanup_new_hosted_assets(
+            client,
+            vector_store_id=str(vector_store_id),
+            file_ids=uploaded_file_ids,
+        )
         failed_state = _state_payload(
             status="failed",
             vector_store_id=str(vector_store_id),
@@ -89,6 +96,7 @@ def sync_openai_vector_store(
             file_signatures=file_signatures,
             files=files,
             error=f"{type(exc).__name__}: {exc}",
+            failure_cleanup=failure_cleanup,
         )
         config.openai_vector_store_state.write_text(
             json.dumps(failed_state, indent=2), encoding="utf-8"
@@ -192,6 +200,33 @@ def _cleanup_previous_hosted_assets(
     return cleanup
 
 
+def _cleanup_new_hosted_assets(
+    client,
+    *,
+    vector_store_id: str,
+    file_ids: list[str],
+) -> dict[str, object]:
+    cleanup: dict[str, object] = {"deleted_file_ids": []}
+    errors: list[str] = []
+    try:
+        client.vector_stores.delete(vector_store_id)
+        cleanup["deleted_vector_store_id"] = vector_store_id
+    except Exception as exc:
+        errors.append(f"vector_store:{type(exc).__name__}: {exc}")
+
+    deleted_file_ids: list[str] = []
+    for file_id in file_ids:
+        try:
+            client.files.delete(file_id)
+            deleted_file_ids.append(file_id)
+        except Exception as exc:
+            errors.append(f"file:{file_id}:{type(exc).__name__}: {exc}")
+    cleanup["deleted_file_ids"] = deleted_file_ids
+    if errors:
+        cleanup["errors"] = errors
+    return cleanup
+
+
 def _state_payload(
     *,
     status: str,
@@ -202,6 +237,7 @@ def _state_payload(
     files: list[dict[str, object]],
     error: str | None = None,
     previous_cleanup: dict[str, object] | None = None,
+    failure_cleanup: dict[str, object] | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "status": status,
@@ -218,4 +254,6 @@ def _state_payload(
         payload["error"] = error
     if previous_cleanup:
         payload["previous_cleanup"] = previous_cleanup
+    if failure_cleanup:
+        payload["failure_cleanup"] = failure_cleanup
     return payload

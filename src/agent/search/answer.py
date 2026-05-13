@@ -46,10 +46,10 @@ class SearchAnswerer:
         if specialized is not None:
             return specialized
         if plan.requires_count:
-            docs = self._documents_for_plan(plan, limit=500)
-            count = len(docs)
+            docs = self._documents_for_plan(plan, limit=40)
+            count = self._document_count_for_plan(plan)
             doc_labels = [
-                f"{doc['doc_id']} Rev {doc['revision']}" for doc in docs[:40]
+                f"{doc['doc_id']} Rev {doc['revision']}" for doc in docs
             ]
             scope = plan.doc_id or plan.prefix or "matching"
             answer = (
@@ -57,11 +57,11 @@ class SearchAnswerer:
                 f"I counted records in the local SQLite metadata store, not a top-N retrieval sample. "
                 f"Documents: {'; '.join(doc_labels) if doc_labels else 'none found'}."
             )
-            citation_rows = self._metadata_citations(docs[:40], section="metadata_inventory")
+            citation_rows = self._metadata_citations(docs, section="metadata_inventory")
             return {
                 "answer": answer,
                 "citations": citation_rows,
-                "retrieved_documents": self._metadata_documents(docs[:40]),
+                "retrieved_documents": self._metadata_documents(docs),
                 "query_plan": asdict(plan),
                 "warnings": [*citation_errors, *validate_citation_rows(self.store, citation_rows)],
             }
@@ -621,8 +621,10 @@ class SearchAnswerer:
         content_bearing_count = max(document_count - metadata_only_count, 0)
         answer = (
             "The ingest_manifest records "
-            f"{document_count} non-empty DOCX records ingested after ignoring empty documents. "
-            f"Skipped empty documents: {skipped_empty_count}. Metadata-only records retained for discovery: "
+            f"Count: {content_bearing_count} non-empty content-bearing DOCX records ingested. "
+            f"Total normalized DOCX records: {document_count}. "
+            f"Skipped empty documents retained as metadata-only records: {skipped_empty_count}. "
+            f"Metadata-only records retained for discovery: "
             f"{metadata_only_count}. Content-bearing records after excluding metadata-only entries: "
             f"{content_bearing_count}."
         )
@@ -866,6 +868,45 @@ class SearchAnswerer:
         with self.store.connect() as conn:
             rows = conn.execute(query, values).fetchall()
         return [dict(row) for row in rows]
+
+    def _document_count_for_plan(self, plan: QueryPlan) -> int:
+        if plan.requires_revision_chain:
+            return len(
+                self.store.revision_chain(
+                    doc_id=plan.doc_id,
+                    prefix=plan.prefix,
+                    include_obsolete=True,
+                    limit=1_000_000,
+                )
+            )
+        if plan.doc_id or plan.prefix:
+            return self.store.count_documents(
+                doc_id=plan.doc_id,
+                prefix=plan.prefix if not plan.doc_id else None,
+                revision=plan.revision,
+                latest_only=plan.latest_only,
+                include_obsolete=plan.include_obsolete,
+            )
+        lower = plan.query.lower()
+        clauses: list[str] = []
+        values: list[object] = []
+        if "obsolete" in lower:
+            clauses.append("is_obsolete = 1")
+        elif not plan.include_obsolete:
+            clauses.append("is_obsolete = 0")
+        signature_filter = requested_signature_filter(plan.query)
+        if signature_filter is not None:
+            clauses.append("is_signed = ?")
+            values.append(int(signature_filter))
+        if plan.latest_only:
+            clauses.append("is_latest = 1")
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self.store.connect() as conn:
+            row = conn.execute(
+                f"SELECT COUNT(*) FROM documents {where}",
+                values,
+            ).fetchone()
+        return int(row[0]) if row else 0
 
     def _metadata_citations(
         self, docs: list[dict[str, object]], *, section: str
