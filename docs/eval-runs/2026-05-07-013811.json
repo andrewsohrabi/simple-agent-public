@@ -1,0 +1,1563 @@
+{
+  "results": [
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_001",
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "BOM-055",
+        "Rev G"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_002",
+      "matched_sources": [
+        "MEMO-P01-"
+      ],
+      "matched_terms": [
+        "summary"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "510(k)"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_003",
+      "matched_sources": [
+        "VVPR-P01-179"
+      ],
+      "matched_terms": [
+        "VVPR-P01-179",
+        "Radiographic"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_004",
+      "matched_sources": [
+        "PLN-P01-062"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "Project Quality Plan",
+        "PLN-P01-062"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "total_score": 0.3
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_005",
+      "matched_sources": [
+        "MEMO-P01-638"
+      ],
+      "matched_terms": [
+        "Software Development Configuration Management",
+        "signed"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_006",
+      "matched_sources": [
+        "IFU"
+      ],
+      "matched_terms": [
+        "Instructions for Use",
+        "revision"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_007",
+      "matched_sources": [
+        "MEMO-P01-658"
+      ],
+      "matched_terms": [
+        "System Architecture Diagram",
+        "MEMO-P01-658"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_008",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO-P01-642"
+      ],
+      "missing_terms": [
+        "Use Specification",
+        "MEMO-P01-642"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_009",
+      "matched_sources": [
+        "ECR-593"
+      ],
+      "matched_terms": [
+        "ECR",
+        "BOM-055 Rev G"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_010",
+      "matched_sources": [
+        "VVPR-P01-214"
+      ],
+      "matched_terms": [
+        "VVPR-P01-214",
+        "Obsolete"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_011",
+      "matched_sources": [
+        "MEMO-P01-655"
+      ],
+      "matched_terms": [
+        "User Interface Specification",
+        "P01-MAI"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "id": "qms_known_item_retrieval_012",
+      "matched_sources": [
+        "MEMO-P01-630"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "Software Requirement Specifications",
+        "Revision"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "total_score": 0.3
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_001",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "VVPR"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_002",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "RSK"
+      ],
+      "missing_terms": [
+        "risk",
+        "RSK"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_003",
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [
+        "PLN"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "planning"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_004",
+      "matched_sources": [],
+      "matched_terms": [
+        "software",
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR"
+      ],
+      "missing_terms": [],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "total_score": 0.7
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_005",
+      "matched_sources": [],
+      "matched_terms": [
+        "usability",
+        "user interface"
+      ],
+      "missing_sources": [
+        "MEMO-P01-654",
+        "MEMO-P01-655"
+      ],
+      "missing_terms": [],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "total_score": 0.7
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_006",
+      "matched_sources": [],
+      "matched_terms": [
+        "report"
+      ],
+      "missing_sources": [
+        "3P"
+      ],
+      "missing_terms": [
+        "third-party"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_007",
+      "matched_sources": [],
+      "matched_terms": [
+        "traceability",
+        "TRA"
+      ],
+      "missing_sources": [
+        "TRA"
+      ],
+      "missing_terms": [],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "total_score": 0.7
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_008",
+      "matched_sources": [
+        "VVPR-P01-240",
+        "VVPR-P01-267"
+      ],
+      "matched_terms": [
+        "workstation",
+        "qualification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_009",
+      "matched_sources": [
+        "VVPR-P01-152"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "pediatric",
+        "filtration"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "total_score": 0.3
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_010",
+      "matched_sources": [],
+      "matched_terms": [
+        "design"
+      ],
+      "missing_sources": [
+        "MEMO-P01-630",
+        "MEMO-P01-631",
+        "MEMO-P01-658"
+      ],
+      "missing_terms": [
+        "requirements"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_011",
+      "matched_sources": [],
+      "matched_terms": [
+        "labeling"
+      ],
+      "missing_sources": [
+        "IFU",
+        "ESF"
+      ],
+      "missing_terms": [
+        "IFU"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "exploratory_search",
+      "id": "qms_exploratory_search_012",
+      "matched_sources": [
+        "MEMO-P01-638"
+      ],
+      "matched_terms": [
+        "maintenance",
+        "configuration management"
+      ],
+      "missing_sources": [
+        "PLN-P01-025"
+      ],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 0.5,
+      "term_score": 1.0,
+      "total_score": 0.85
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_001",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "DHF"
+      ],
+      "missing_terms": [
+        "Design History File",
+        "820.30"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_002",
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR",
+        "TRA"
+      ],
+      "missing_terms": [
+        "risk analysis"
+      ],
+      "passed": false,
+      "source_score": 0.3333,
+      "term_score": 0.5,
+      "total_score": 0.45
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_003",
+      "matched_sources": [
+        "DHF",
+        "VVPR"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "DR"
+      ],
+      "missing_terms": [
+        "design inputs",
+        "verification"
+      ],
+      "passed": false,
+      "source_score": 0.6667,
+      "term_score": 0.0,
+      "total_score": 0.2
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_004",
+      "matched_sources": [
+        "VVPR",
+        "PLN"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "design verification",
+        "VVPR"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "total_score": 0.3
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_005",
+      "matched_sources": [
+        "MEMO-P01-642"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "VVPR"
+      ],
+      "missing_terms": [
+        "validation",
+        "user needs"
+      ],
+      "passed": false,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "total_score": 0.15
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_006",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "RSK",
+        "VVPR"
+      ],
+      "missing_terms": [
+        "risk",
+        "electrical safety"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_007",
+      "matched_sources": [
+        "PLN-P01-062"
+      ],
+      "matched_terms": [
+        "quality plan"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "review"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_008",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "TRA",
+        "MEMO-P01-630",
+        "VVPR"
+      ],
+      "missing_terms": [
+        "traceability",
+        "requirements"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_009",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "QSR"
+      ],
+      "missing_terms": [
+        "CAPA",
+        "quality system"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_010",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "IFU",
+        "ESF"
+      ],
+      "missing_terms": [
+        "IFU",
+        "labeling"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_011",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "3P"
+      ],
+      "missing_terms": [
+        "third-party",
+        "safety"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "id": "qms_compliance_cross_reference_012",
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [
+        "design transfer"
+      ],
+      "missing_sources": [
+        "DMR"
+      ],
+      "missing_terms": [
+        "DMR"
+      ],
+      "passed": false,
+      "source_score": 0.5,
+      "term_score": 0.5,
+      "total_score": 0.5
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_001",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "VVAM"
+      ],
+      "missing_terms": [
+        "acceptance criteria",
+        "electrical safety"
+      ],
+      "passed": false,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "total_score": 0.15
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_002",
+      "matched_sources": [],
+      "matched_terms": [
+        "design review",
+        "action items"
+      ],
+      "missing_sources": [
+        "DR"
+      ],
+      "missing_terms": [],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "total_score": 0.7
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_003",
+      "matched_sources": [
+        "VVPR-P01-152"
+      ],
+      "matched_terms": [
+        "pediatric filtration"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "acceptance criteria"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_004",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "VVPR-P01-159"
+      ],
+      "missing_terms": [
+        "weight",
+        "acceptance"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_005",
+      "matched_sources": [
+        "MEMO-P01-660"
+      ],
+      "matched_terms": [
+        "Gamma Curve",
+        "consistency"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_006",
+      "matched_sources": [
+        "MEMO-P01-672"
+      ],
+      "matched_terms": [
+        "Dosimetric Indications",
+        "MEMO-P01-672"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_007",
+      "matched_sources": [
+        "VVPR-P01-181"
+      ],
+      "matched_terms": [
+        "Critical Faults",
+        "verification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_008",
+      "matched_sources": [
+        "VVPR-P01-230"
+      ],
+      "matched_terms": [
+        "Fuzz Testing",
+        "Protocol and Report"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_009",
+      "matched_sources": [
+        "VVPR-P01-267"
+      ],
+      "matched_terms": [
+        "WS-010",
+        "Operational Qualification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_010",
+      "matched_sources": [],
+      "matched_terms": [
+        "architecture"
+      ],
+      "missing_sources": [
+        "MEMO-P01-658"
+      ],
+      "missing_terms": [
+        "System Architecture"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_011",
+      "matched_sources": [],
+      "matched_terms": [
+        "User Interface Specification"
+      ],
+      "missing_sources": [
+        "MEMO-P01-655"
+      ],
+      "missing_terms": [
+        "P01-MAI"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "id": "qms_content_extraction_synthesis_012",
+      "matched_sources": [
+        "MEMO-P01-677"
+      ],
+      "matched_terms": [
+        "Code Review",
+        "verification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_001",
+      "matched_sources": [],
+      "matched_terms": [
+        "Rev C",
+        "Rev D"
+      ],
+      "missing_sources": [
+        "RSK"
+      ],
+      "missing_terms": [],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "total_score": 0.7
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_002",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "ECR"
+      ],
+      "missing_terms": [
+        "ECR",
+        "status"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_003",
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "BOM-055",
+        "Rev G"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_004",
+      "matched_sources": [
+        "VVPR-P01-214"
+      ],
+      "matched_terms": [
+        "VVPR-P01-214",
+        "obsolete"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_005",
+      "matched_sources": [],
+      "matched_terms": [
+        "Obsolete"
+      ],
+      "missing_sources": [
+        "MEMO-P01-776"
+      ],
+      "missing_terms": [
+        "Software Requirement Specifications"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_006",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO-P01-777"
+      ],
+      "missing_terms": [
+        "Software Design Specifications",
+        "Obsolete"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_007",
+      "matched_sources": [],
+      "matched_terms": [
+        "revision"
+      ],
+      "missing_sources": [
+        "IFU"
+      ],
+      "missing_terms": [
+        "Instructions for Use"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_008",
+      "matched_sources": [],
+      "matched_terms": [
+        "BOM-055 Rev G"
+      ],
+      "missing_sources": [
+        "ECR-593"
+      ],
+      "missing_terms": [
+        "ECR-593"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_009",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "signed",
+        "VVPR"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_010",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "PLN"
+      ],
+      "missing_terms": [
+        "PLN",
+        "Obsolete"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_011",
+      "matched_sources": [],
+      "matched_terms": [
+        "Rev B"
+      ],
+      "missing_sources": [
+        "VVPR-P01-189",
+        "VVPR-P01-214"
+      ],
+      "missing_terms": [
+        "Rev C"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "revision_change_tracking",
+      "id": "qms_revision_change_tracking_012",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "BOM-055",
+        "RSK"
+      ],
+      "missing_terms": [
+        "revision",
+        "chain"
+      ],
+      "passed": false,
+      "source_score": 0.3333,
+      "term_score": 0.0,
+      "total_score": 0.1
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_001",
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR",
+        "TRA"
+      ],
+      "missing_terms": [
+        "electrical leakage"
+      ],
+      "passed": false,
+      "source_score": 0.3333,
+      "term_score": 0.5,
+      "total_score": 0.45
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_002",
+      "matched_sources": [],
+      "matched_terms": [
+        "requirements"
+      ],
+      "missing_sources": [
+        "3P",
+        "TRA"
+      ],
+      "missing_terms": [
+        "third-party"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "total_score": 0.35
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_003",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [
+        "MEMO-P01-630",
+        "MEMO-P01-631"
+      ],
+      "missing_terms": [
+        "requirements"
+      ],
+      "passed": false,
+      "source_score": 0.3333,
+      "term_score": 0.5,
+      "total_score": 0.45
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_004",
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "pediatric filtration",
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR-P01-152",
+        "TRA"
+      ],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 0.3333,
+      "term_score": 1.0,
+      "total_score": 0.8
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_005",
+      "matched_sources": [
+        "ECR-593"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "BOM-055"
+      ],
+      "missing_terms": [
+        "BOM-055",
+        "ECR-593"
+      ],
+      "passed": false,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "total_score": 0.15
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_006",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "RSK",
+        "VVPR-P01-181"
+      ],
+      "missing_terms": [
+        "critical faults",
+        "risk"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_007",
+      "matched_sources": [
+        "MEMO-P01-642"
+      ],
+      "matched_terms": [
+        "Use Specification",
+        "User Interface",
+        "Usability"
+      ],
+      "missing_sources": [
+        "MEMO-P01-655",
+        "MEMO-P01-654"
+      ],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 0.3333,
+      "term_score": 1.0,
+      "total_score": 0.8
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_008",
+      "matched_sources": [
+        "VVPR-P01-240",
+        "VVPR-P01-267"
+      ],
+      "matched_terms": [
+        "Workstation",
+        "Qualification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_009",
+      "matched_sources": [],
+      "matched_terms": [
+        "Radiographic",
+        "Radioscopic"
+      ],
+      "missing_sources": [
+        "VVPR-P01-179"
+      ],
+      "missing_terms": [],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "total_score": 0.7
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_010",
+      "matched_sources": [
+        "MEMO-P01-630"
+      ],
+      "matched_terms": [
+        "Software Design",
+        "Requirements"
+      ],
+      "missing_sources": [
+        "MEMO-P01-658",
+        "MEMO-P01-631"
+      ],
+      "missing_terms": [
+        "System Architecture"
+      ],
+      "passed": false,
+      "source_score": 0.3333,
+      "term_score": 0.6667,
+      "total_score": 0.5667
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_011",
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "risk"
+      ],
+      "missing_sources": [
+        "IFU",
+        "MEMO-P01-642"
+      ],
+      "missing_terms": [
+        "IFU"
+      ],
+      "passed": false,
+      "source_score": 0.3333,
+      "term_score": 0.5,
+      "total_score": 0.45
+    },
+    {
+      "category": "cross_document_analysis",
+      "id": "qms_cross_document_analysis_012",
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "risk"
+      ],
+      "missing_sources": [
+        "VVPR-P01-230"
+      ],
+      "missing_terms": [
+        "Fuzz Testing"
+      ],
+      "passed": false,
+      "source_score": 0.5,
+      "term_score": 0.5,
+      "total_score": 0.5
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_001",
+      "matched_sources": [
+        "ECR"
+      ],
+      "matched_terms": [
+        "ECR",
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_002",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "PLN"
+      ],
+      "missing_terms": [
+        "verification protocols",
+        "planned"
+      ],
+      "passed": false,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "total_score": 0.15
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_003",
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "BOM-055",
+        "revisions"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_004",
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "documents"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "risk"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_005",
+      "matched_sources": [
+        "TRA"
+      ],
+      "matched_terms": [
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "traceability"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_006",
+      "matched_sources": [
+        "IFU"
+      ],
+      "matched_terms": [
+        "IFU",
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "passed": true,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_007",
+      "matched_sources": [
+        "3P"
+      ],
+      "matched_terms": [
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "third-party"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_008",
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "VVPR"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "software"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_009",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "BOM-055",
+        "VVPR",
+        "PLN"
+      ],
+      "missing_terms": [
+        "obsolete",
+        "count"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_010",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO",
+        "PLN",
+        "VVPR"
+      ],
+      "missing_terms": [
+        "signed",
+        "count"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_011",
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "PLN",
+        "count"
+      ],
+      "passed": false,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "total_score": 0.3
+    },
+    {
+      "category": "enumeration_counting",
+      "id": "qms_enumeration_counting_012",
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "ingest_manifest"
+      ],
+      "missing_terms": [
+        "non-empty",
+        "ingested"
+      ],
+      "passed": false,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "total_score": 0.0
+    }
+  ],
+  "summary": {
+    "average_score": 0.521,
+    "average_source_score": 0.5099,
+    "average_term_score": 0.5258,
+    "by_category": {
+      "compliance_cross_reference": {
+        "average_score": 0.1875,
+        "passed": 0,
+        "total": 12
+      },
+      "content_extraction_synthesis": {
+        "average_score": 0.6833,
+        "passed": 6,
+        "total": 12
+      },
+      "cross_document_analysis": {
+        "average_score": 0.5181,
+        "passed": 3,
+        "total": 12
+      },
+      "enumeration_counting": {
+        "average_score": 0.5042,
+        "passed": 3,
+        "total": 12
+      },
+      "exploratory_search": {
+        "average_score": 0.55,
+        "passed": 2,
+        "total": 12
+      },
+      "known_item_retrieval": {
+        "average_score": 0.7708,
+        "passed": 8,
+        "total": 12
+      },
+      "revision_change_tracking": {
+        "average_score": 0.4333,
+        "passed": 3,
+        "total": 12
+      }
+    },
+    "passed": 25,
+    "total": 84
+  }
+}

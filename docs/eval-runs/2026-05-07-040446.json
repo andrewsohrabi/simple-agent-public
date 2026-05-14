@@ -1,0 +1,3061 @@
+{
+  "results": [
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.3333,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_001",
+      "invalid_citations": [
+        "BOM-079 Rev P",
+        "BOM-101 Rev A"
+      ],
+      "latest_revision_correct": true,
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "BOM-055",
+        "Rev G"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.3333,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_002",
+      "invalid_citations": [
+        "3P-P01-32-MX1-REV-F-SGS-IEC-60601-1-2-EMC-SUMMARY-REPORT-A Rev A",
+        "PLN-P01-059 Rev E",
+        "PLN-P01-059 Rev E",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-"
+      ],
+      "matched_terms": [
+        "summary"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "510(k)"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_003",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-179"
+      ],
+      "matched_terms": [
+        "VVPR-P01-179",
+        "Radiographic"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.2308,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_004",
+      "invalid_citations": [
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-060 Rev C",
+        "PLN-P01-060 Rev C",
+        "PLN-P01-060 Rev C",
+        "PLN-P01-060 Rev C"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "PLN-P01-062"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "Project Quality Plan",
+        "PLN-P01-062"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.3
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.0625,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_005",
+      "invalid_citations": [
+        "MEMO-P01-412 Rev B",
+        "MEMO-P01-416 Rev A",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-631 Rev F",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-634 Rev B",
+        "MEMO-P01-636 Rev B",
+        "MEMO-P01-637 Rev B",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-654 Rev C",
+        "MEMO-P01-655 Rev C",
+        "MEMO-P01-656 Rev B",
+        "MEMO-P01-657 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-638"
+      ],
+      "matched_terms": [
+        "signed"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "Software Development Configuration Management"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.65
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_006",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "IFU"
+      ],
+      "matched_terms": [
+        "Instructions for Use",
+        "revision"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_007",
+      "invalid_citations": [
+        "MEMO-P01-412 Rev B",
+        "MEMO-P01-416 Rev A",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-631 Rev F",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-634 Rev B",
+        "MEMO-P01-636 Rev B",
+        "MEMO-P01-637 Rev B",
+        "MEMO-P01-638 Rev A",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-654 Rev C",
+        "MEMO-P01-655 Rev C",
+        "MEMO-P01-656 Rev B",
+        "MEMO-P01-657 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO-P01-658"
+      ],
+      "missing_terms": [
+        "System Architecture Diagram",
+        "MEMO-P01-658"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_008",
+      "invalid_citations": [
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "RSK-P01-013 Rev C"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO-P01-642"
+      ],
+      "missing_terms": [
+        "Use Specification",
+        "MEMO-P01-642"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_009",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "ECR-593"
+      ],
+      "matched_terms": [
+        "ECR",
+        "BOM-055 Rev G"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_010",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-214"
+      ],
+      "matched_terms": [
+        "VVPR-P01-214",
+        "Obsolete"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.1429,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_011",
+      "invalid_citations": [
+        "MEMO-P01-654 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-642 Rev D",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-655"
+      ],
+      "matched_terms": [
+        "User Interface Specification",
+        "P01-MAI"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "known_item_retrieval",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_known_item_retrieval_012",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVPR-SWV-035 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO-P01-630"
+      ],
+      "missing_terms": [
+        "Software Requirement Specifications",
+        "Revision"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_001",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "VVPR",
+        "verification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_002",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "risk"
+      ],
+      "missing_sources": [
+        "RSK"
+      ],
+      "missing_terms": [
+        "RSK"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_003",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [
+        "PLN"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "planning"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_004",
+      "invalid_citations": [
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "RSK-P01-013 Rev C",
+        "PLN-P01-025 Rev B",
+        "PLN-P01-025 Rev B",
+        "PLN-P01-025 Rev B",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "software",
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 0.7
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.0667,
+      "count_correct": null,
+      "id": "qms_exploratory_search_005",
+      "invalid_citations": [
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "PLN-P01-064 Rev C"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-654"
+      ],
+      "matched_terms": [
+        "usability",
+        "user interface"
+      ],
+      "missing_sources": [
+        "MEMO-P01-655"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.5,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 0.85
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_006",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVPR-P01-230 Rev B",
+        "VVPR-P01-230 Rev B",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-685 Rev A",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "report"
+      ],
+      "missing_sources": [
+        "3P"
+      ],
+      "missing_terms": [
+        "third-party"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_007",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "TRA"
+      ],
+      "missing_sources": [
+        "TRA"
+      ],
+      "missing_terms": [
+        "traceability"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.1538,
+      "count_correct": null,
+      "id": "qms_exploratory_search_008",
+      "invalid_citations": [
+        "VVPR-P01-254 Rev B",
+        "MEMO-P01-859 Rev A",
+        "MEMO-P01-859 Rev A",
+        "VVPR-P01-255 Rev B",
+        "VVPR-P01-253 Rev B",
+        "VVPR-P01-242 Rev A",
+        "VVPR-P01-243 Rev A",
+        "VVPR-P01-239 Rev A",
+        "VVPR-P01-241 Rev A",
+        "VVPR-P01-265 Rev A",
+        "VVPR-P01-268 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-240",
+        "VVPR-P01-267"
+      ],
+      "matched_terms": [
+        "workstation",
+        "qualification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 1.0
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.1875,
+      "count_correct": null,
+      "id": "qms_exploratory_search_009",
+      "invalid_citations": [
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-152"
+      ],
+      "matched_terms": [],
+      "missing_sources": [],
+      "missing_terms": [
+        "pediatric",
+        "filtration"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 1.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.3
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.0909,
+      "count_correct": null,
+      "id": "qms_exploratory_search_010",
+      "invalid_citations": [
+        "MEMO-P01-412 Rev B",
+        "MEMO-P01-416 Rev A",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-634 Rev B",
+        "MEMO-P01-636 Rev B",
+        "MEMO-P01-637 Rev B",
+        "MEMO-P01-638 Rev A",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-654 Rev C",
+        "MEMO-P01-655 Rev C",
+        "MEMO-P01-656 Rev B",
+        "MEMO-P01-657 Rev B",
+        "MEMO-P01-660 Rev A",
+        "MEMO-P01-662 Rev A",
+        "MEMO-P01-663 Rev A",
+        "MEMO-P01-665 Rev A",
+        "MEMO-P01-670 Rev A",
+        "MEMO-P01-671 Rev A",
+        "MEMO-P01-672 Rev A",
+        "MEMO-P01-674 Rev D",
+        "MEMO-P01-677 Rev A",
+        "MEMO-P01-680 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-706 Rev A",
+        "MEMO-P01-747 Rev A",
+        "MEMO-P01-769 Rev A",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-859 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-630",
+        "MEMO-P01-631",
+        "MEMO-P01-658"
+      ],
+      "matched_terms": [
+        "design"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "requirements"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.6667,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_exploratory_search_011",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "IFU"
+      ],
+      "matched_terms": [
+        "IFU"
+      ],
+      "missing_sources": [
+        "ESF"
+      ],
+      "missing_terms": [
+        "labeling"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.5,
+      "source_score": 0.5,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.5
+    },
+    {
+      "category": "exploratory_search",
+      "citation_validity": 0.1875,
+      "count_correct": null,
+      "id": "qms_exploratory_search_012",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-638"
+      ],
+      "matched_terms": [
+        "maintenance",
+        "configuration management"
+      ],
+      "missing_sources": [
+        "PLN-P01-025"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.5,
+      "source_score": 0.5,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 0.85
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_001",
+      "invalid_citations": [
+        "PLN-P01-062 Rev D",
+        "PLN-P01-062 Rev D",
+        "PLN-P01-062 Rev D",
+        "RSK-P01-017 Rev B",
+        "RSK-P01-017 Rev B",
+        "RSK-P01-017 Rev B",
+        "DMR-003 Rev A",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-061 Rev E"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "Design History File"
+      ],
+      "missing_sources": [
+        "DHF"
+      ],
+      "missing_terms": [
+        "820.30"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_002",
+      "invalid_citations": [
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR",
+        "RSK",
+        "TRA"
+      ],
+      "missing_terms": [
+        "risk analysis"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.4545,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_003",
+      "invalid_citations": [
+        "PLN-P01-060 Rev C",
+        "PLN-P01-060 Rev C",
+        "PLN-P01-060 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "DHF"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "DR",
+        "VVPR"
+      ],
+      "missing_terms": [
+        "design inputs",
+        "verification"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.3333,
+      "source_score": 0.3333,
+      "term_score": 0.0,
+      "top_k_hit": true,
+      "total_score": 0.1
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.5625,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_004",
+      "invalid_citations": [
+        "RSK-P01-017 Rev B",
+        "RSK-P01-017 Rev B",
+        "RSK-P01-017 Rev B",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR",
+        "PLN"
+      ],
+      "matched_terms": [
+        "VVPR"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "design verification"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.1538,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_005",
+      "invalid_citations": [
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-642"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "VVPR"
+      ],
+      "missing_terms": [
+        "validation",
+        "user needs"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.5,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "top_k_hit": true,
+      "total_score": 0.15
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_006",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "risk"
+      ],
+      "missing_sources": [
+        "RSK",
+        "VVPR"
+      ],
+      "missing_terms": [
+        "electrical safety"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0909,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_007",
+      "invalid_citations": [
+        "PLN-P01-024 Rev E",
+        "PLN-P01-025 Rev B",
+        "PLN-P01-037 Rev B",
+        "PLN-P01-059 Rev E",
+        "PLN-P01-060 Rev C",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-063 Rev B",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-066 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "PLN-P01-062"
+      ],
+      "matched_terms": [
+        "quality plan"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "review"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.65
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_008",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "PLN-P01-059 Rev E",
+        "PLN-P01-059 Rev E",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "requirements"
+      ],
+      "missing_sources": [
+        "TRA",
+        "MEMO-P01-630",
+        "VVPR"
+      ],
+      "missing_terms": [
+        "traceability"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_009",
+      "invalid_citations": [
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "PLN-P01-062 Rev D",
+        "PLN-P01-062 Rev D",
+        "PLN-P01-062 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "QSR"
+      ],
+      "missing_terms": [
+        "CAPA",
+        "quality system"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_010",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "labeling"
+      ],
+      "missing_sources": [
+        "IFU",
+        "ESF"
+      ],
+      "missing_terms": [
+        "IFU"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_011",
+      "invalid_citations": [
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-061 Rev E",
+        "PLN-P01-065 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVPR-P01-222 Rev B",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "3P"
+      ],
+      "missing_terms": [
+        "third-party",
+        "safety"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "compliance_cross_reference",
+      "citation_validity": 0.4375,
+      "count_correct": null,
+      "id": "qms_compliance_cross_reference_012",
+      "invalid_citations": [
+        "MEMO-P01-859 Rev A",
+        "MEMO-P01-859 Rev A",
+        "ECR-577 Rev A",
+        "ECR-587 Rev A",
+        "ECR-593 Rev A",
+        "ECR-593 Rev A",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "DMR"
+      ],
+      "missing_terms": [
+        "design transfer",
+        "DMR"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.15
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.5625,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_001",
+      "invalid_citations": [
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-670 Rev A",
+        "MEMO-P01-670 Rev A",
+        "MEMO-P01-670 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "VVAM"
+      ],
+      "missing_terms": [
+        "acceptance criteria",
+        "electrical safety"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.5,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "top_k_hit": true,
+      "total_score": 0.15
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_002",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-706 Rev A",
+        "MEMO-P01-663 Rev A",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-859 Rev A",
+        "MEMO-P01-663 Rev A",
+        "MEMO-P01-663 Rev A",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-859 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "design review",
+        "action items"
+      ],
+      "missing_sources": [
+        "DR"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 0.7
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.1875,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_003",
+      "invalid_citations": [
+        "VVPR-P01-151 Rev B",
+        "VVPR-P01-151 Rev B",
+        "VVPR-P01-151 Rev B",
+        "VVPR-P01-172 Rev B",
+        "VVPR-P01-172 Rev B",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-685 Rev A",
+        "VVPR-P01-160 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-152"
+      ],
+      "matched_terms": [
+        "pediatric filtration"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "acceptance criteria"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.0714,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_004",
+      "invalid_citations": [
+        "VVPR-P01-226 Rev B",
+        "VVPR-SWV-015 Rev B",
+        "VVPR-SWV-011 Rev B",
+        "VVPR-SWV-019 Rev B",
+        "VVPR-SWV-027 Rev B",
+        "VVPR-SWV-027 Rev A",
+        "VVPR-SWV-013 Rev B",
+        "VVPR-SWV-020 Rev B",
+        "VVPR-P01-183 Rev B",
+        "VVPR-P01-219 Rev B",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-159"
+      ],
+      "matched_terms": [
+        "weight"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "acceptance"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.1333,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_005",
+      "invalid_citations": [
+        "MEMO-P01-773 Rev B",
+        "DHF-008 Rev D",
+        "DHF-008 Rev D",
+        "DHF-008 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-640 Rev C"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-660"
+      ],
+      "matched_terms": [
+        "Gamma Curve",
+        "consistency"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.0625,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_006",
+      "invalid_citations": [
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-672"
+      ],
+      "matched_terms": [
+        "Dosimetric Indications",
+        "MEMO-P01-672"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.8,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_007",
+      "invalid_citations": [
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-181"
+      ],
+      "matched_terms": [
+        "Critical Faults",
+        "verification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.1333,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_008",
+      "invalid_citations": [
+        "VVPR-P01-238 Rev B",
+        "VVPR-P01-238 Rev B",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "VVPR-P01-219 Rev B",
+        "VVPR-P01-255 Rev B",
+        "VVPR-SWV-015 Rev B",
+        "VVPR-SWV-019 Rev B",
+        "VVPR-SWV-011 Rev B",
+        "VVPR-SWV-020 Rev B",
+        "VVPR-P01-183 Rev B",
+        "VVPR-SWV-013 Rev B",
+        "VVPR-SWV-027 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-230"
+      ],
+      "matched_terms": [
+        "Fuzz Testing",
+        "Protocol and Report"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.4167,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_009",
+      "invalid_citations": [
+        "VVPR-P01-269 Rev B",
+        "VVPR-P01-254 Rev B",
+        "VVPR-P01-255 Rev B",
+        "VVPR-P01-253 Rev B",
+        "VVPR-P01-254 Rev B",
+        "VVPR-P01-253 Rev B",
+        "VVPR-P01-265 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-267"
+      ],
+      "matched_terms": [
+        "WS-010",
+        "Operational Qualification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_010",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "architecture"
+      ],
+      "missing_sources": [
+        "MEMO-P01-658"
+      ],
+      "missing_terms": [
+        "System Architecture"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_011",
+      "invalid_citations": [
+        "VVPR-P01-204 Rev B",
+        "VVPR-P01-204 Rev B",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "VVPR-P01-181 Rev B",
+        "VVPR-P01-181 Rev B",
+        "VVPR-P01-181 Rev B",
+        "VVPR-P01-204 Rev B",
+        "VVPR-P01-204 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "User Interface Specification"
+      ],
+      "missing_sources": [
+        "MEMO-P01-655"
+      ],
+      "missing_terms": [
+        "P01-MAI"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "content_extraction_synthesis",
+      "citation_validity": 0.0625,
+      "count_correct": null,
+      "id": "qms_content_extraction_synthesis_012",
+      "invalid_citations": [
+        "MEMO-P01-680 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "VVPR-P01-271 Rev B",
+        "VVPR-P01-271 Rev B",
+        "VVPR-P01-271 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-677"
+      ],
+      "matched_terms": [
+        "Code Review",
+        "verification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_001",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "Rev C"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "Rev D"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_002",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "ECR"
+      ],
+      "matched_terms": [
+        "ECR"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "status"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_003",
+      "invalid_citations": [],
+      "latest_revision_correct": true,
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "BOM-055",
+        "Rev G"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_004",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-214"
+      ],
+      "matched_terms": [
+        "VVPR-P01-214",
+        "obsolete"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_005",
+      "invalid_citations": [
+        "PLN-P01-024 Rev D",
+        "PLN-P01-024 Rev D",
+        "PLN-P01-024 Rev D",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-638 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "Obsolete"
+      ],
+      "missing_sources": [
+        "MEMO-P01-776"
+      ],
+      "missing_terms": [
+        "Software Requirement Specifications"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_006",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev A",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev A",
+        "PLN-P01-064 Rev A",
+        "PLN-P01-064 Rev A",
+        "PLN-P01-024 Rev D",
+        "PLN-P01-024 Rev D",
+        "PLN-P01-024 Rev D",
+        "PLN-P01-024 Rev E"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "MEMO-P01-777"
+      ],
+      "missing_terms": [
+        "Software Design Specifications",
+        "Obsolete"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_007",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "IFU"
+      ],
+      "matched_terms": [
+        "revision"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "Instructions for Use"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_008",
+      "invalid_citations": [
+        "BOM-055 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "BOM-055 Rev G"
+      ],
+      "missing_sources": [
+        "ECR-593"
+      ],
+      "missing_terms": [
+        "ECR-593"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_009",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "VVPR"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "signed"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_010",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [
+        "PLN"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "Obsolete"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_011",
+      "invalid_citations": [
+        "3P-P01-32-MX1-REV-F-SGS-IEC-60601-1-2-EMC-SUMMARY-REPORT-A Rev A",
+        "3P-P01-32-MX1-REV-F-SGS-IEC-60601-1-2-EMC-SUMMARY-REPORT-A Rev A",
+        "3P-P01-33-INTERTEK-IEC-60601-1-MX1-REV-F-DIELECTRIC-AND-LEAKAGE-SUMMARY-REPORT-A Rev A",
+        "3P-P01-33-INTERTEK-IEC-60601-1-MX1-REV-F-DIELECTRIC-AND-LEAKAGE-SUMMARY-REPORT-A Rev A",
+        "BOM-055 Rev G",
+        "BOM-055 Rev G",
+        "BOM-055 Rev F",
+        "BOM-055 Rev F",
+        "BOM-055 Rev E",
+        "BOM-055 Rev E",
+        "BOM-079 Rev P",
+        "BOM-079 Rev P"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "VVPR-P01-189",
+        "VVPR-P01-214"
+      ],
+      "missing_terms": [
+        "Rev B",
+        "Rev C"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    },
+    {
+      "category": "revision_change_tracking",
+      "citation_validity": 0.075,
+      "count_correct": null,
+      "id": "qms_revision_change_tracking_012",
+      "invalid_citations": [
+        "3P-P01-32-MX1-REV-F-SGS-IEC-60601-1-2-EMC-SUMMARY-REPORT-A Rev A",
+        "3P-P01-33-INTERTEK-IEC-60601-1-MX1-REV-F-DIELECTRIC-AND-LEAKAGE-SUMMARY-REPORT-A Rev A",
+        "BOM-079 Rev M",
+        "BOM-079 Rev P",
+        "BOM-101 Rev A",
+        "DHF-008 Rev D",
+        "DMR-003 Rev A",
+        "DR-P01-005 Rev G",
+        "ECR-577 Rev A",
+        "ECR-587 Rev A",
+        "ECR-593 Rev A",
+        "ESF-P01-003 Rev F",
+        "ESF-P01-003 Rev G",
+        "ESF-P01-016 Rev A",
+        "IFU-MX1 Rev D",
+        "IFU-MX1 Rev L",
+        "MEMO-P01-412 Rev B",
+        "MEMO-P01-416 Rev A",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-630 Rev E",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-631 Rev D",
+        "MEMO-P01-631 Rev F",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-634 Rev B",
+        "MEMO-P01-636 Rev A",
+        "MEMO-P01-636 Rev B",
+        "MEMO-P01-637 Rev B",
+        "MEMO-P01-638 Rev A",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-654 Rev A",
+        "MEMO-P01-654 Rev C",
+        "MEMO-P01-655 Rev C",
+        "MEMO-P01-656 Rev B",
+        "MEMO-P01-657 Rev B",
+        "MEMO-P01-658 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "revision",
+        "chain"
+      ],
+      "missing_sources": [
+        "RSK",
+        "VVPR"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.3333,
+      "source_score": 0.3333,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 0.8
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_001",
+      "invalid_citations": [
+        "DHF-008 Rev D",
+        "DHF-008 Rev D",
+        "DHF-008 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [
+        "RSK",
+        "VVPR",
+        "TRA"
+      ],
+      "missing_terms": [
+        "electrical leakage"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_002",
+      "invalid_citations": [
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-065 Rev C",
+        "PLN-P01-062 Rev D",
+        "PLN-P01-062 Rev D",
+        "PLN-P01-062 Rev D",
+        "PLN-P01-065 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "requirements"
+      ],
+      "missing_sources": [
+        "3P",
+        "TRA"
+      ],
+      "missing_terms": [
+        "third-party"
+      ],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_003",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "requirements",
+        "verification"
+      ],
+      "missing_sources": [
+        "MEMO-P01-630",
+        "MEMO-P01-631",
+        "VVPR"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 0.7
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_004",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-685 Rev A",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "verification"
+      ],
+      "missing_sources": [
+        "VVPR-P01-152",
+        "RSK",
+        "TRA"
+      ],
+      "missing_terms": [
+        "pediatric filtration"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.375,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_005",
+      "invalid_citations": [
+        "ECR-577 Rev A",
+        "ECR-577 Rev A",
+        "ECR-577 Rev A",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-773 Rev B",
+        "MEMO-P01-859 Rev A",
+        "MEMO-P01-859 Rev A",
+        "MEMO-P01-685 Rev A",
+        "MEMO-P01-638 Rev A",
+        "MEMO-P01-638 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "ECR-593"
+      ],
+      "matched_terms": [
+        "BOM-055"
+      ],
+      "missing_sources": [
+        "BOM-055"
+      ],
+      "missing_terms": [
+        "ECR-593"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.5,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.5
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.125,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_006",
+      "invalid_citations": [
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-181"
+      ],
+      "matched_terms": [
+        "critical faults"
+      ],
+      "missing_sources": [
+        "RSK"
+      ],
+      "missing_terms": [
+        "risk"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.5,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.5
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.1333,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_007",
+      "invalid_citations": [
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "PLN-P01-064 Rev C",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVPR-P01-175 Rev B",
+        "VVPR-P01-175 Rev B",
+        "VVPR-P01-175 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO-P01-642"
+      ],
+      "matched_terms": [
+        "Use Specification",
+        "User Interface",
+        "Usability"
+      ],
+      "missing_sources": [
+        "MEMO-P01-655",
+        "MEMO-P01-654"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.3333,
+      "source_score": 0.3333,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 0.8
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.125,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_008",
+      "invalid_citations": [
+        "VVPR-P01-254 Rev B",
+        "VVPR-P01-255 Rev B",
+        "MEMO-P01-859 Rev A",
+        "MEMO-P01-859 Rev A",
+        "DHF-008 Rev D",
+        "DHF-008 Rev D",
+        "DHF-008 Rev D",
+        "VVPR-P01-253 Rev B",
+        "VVPR-P01-269 Rev B",
+        "VVPR-P01-241 Rev A",
+        "VVPR-P01-242 Rev A",
+        "VVPR-P01-239 Rev A",
+        "VVPR-P01-243 Rev A",
+        "BOM-055 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-240",
+        "VVPR-P01-267"
+      ],
+      "matched_terms": [
+        "Workstation",
+        "Qualification"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 1.0
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_009",
+      "invalid_citations": [
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "Radiographic"
+      ],
+      "missing_sources": [
+        "VVPR-P01-179"
+      ],
+      "missing_terms": [
+        "Radioscopic"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.35
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_010",
+      "invalid_citations": [
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "VVAM-P01-004 Rev D",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-633 Rev B",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "VVAM-P01-004 Rev D"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [
+        "Software Design",
+        "Requirements"
+      ],
+      "missing_sources": [
+        "MEMO-P01-658",
+        "MEMO-P01-631",
+        "MEMO-P01-630"
+      ],
+      "missing_terms": [
+        "System Architecture"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.6667,
+      "top_k_hit": false,
+      "total_score": 0.4667
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.5385,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_011",
+      "invalid_citations": [
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "PLN-P01-024 Rev E",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G",
+        "DR-P01-005 Rev G"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "risk"
+      ],
+      "missing_sources": [
+        "IFU",
+        "MEMO-P01-642"
+      ],
+      "missing_terms": [
+        "IFU"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.3333,
+      "source_score": 0.3333,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.45
+    },
+    {
+      "category": "cross_document_analysis",
+      "citation_validity": 0.1667,
+      "count_correct": null,
+      "id": "qms_cross_document_analysis_012",
+      "invalid_citations": [
+        "MEMO-P01-685 Rev A",
+        "VVPR-P01-170 Rev C",
+        "VVPR-P01-170 Rev C",
+        "VVPR-P01-170 Rev C",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-630 Rev H",
+        "PLN-P01-063 Rev B",
+        "PLN-P01-063 Rev B",
+        "PLN-P01-063 Rev B"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR-P01-230"
+      ],
+      "matched_terms": [
+        "Fuzz Testing",
+        "risk"
+      ],
+      "missing_sources": [
+        "RSK"
+      ],
+      "missing_terms": [],
+      "obsolete_leakage": true,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.5,
+      "term_score": 1.0,
+      "top_k_hit": false,
+      "total_score": 0.85
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_001",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "ECR"
+      ],
+      "matched_terms": [
+        "ECR",
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_002",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [],
+      "missing_sources": [
+        "PLN"
+      ],
+      "missing_terms": [
+        "verification protocols",
+        "planned"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.5,
+      "source_score": 0.5,
+      "term_score": 0.0,
+      "top_k_hit": true,
+      "total_score": 0.15
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_003",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "BOM-055"
+      ],
+      "matched_terms": [
+        "BOM-055",
+        "revisions"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_004",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "RSK"
+      ],
+      "matched_terms": [
+        "documents"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "risk"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_005",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "TRA"
+      ],
+      "matched_terms": [
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "traceability"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_006",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "IFU"
+      ],
+      "matched_terms": [
+        "IFU",
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_007",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "3P"
+      ],
+      "matched_terms": [
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "third-party"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_008",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR"
+      ],
+      "matched_terms": [
+        "VVPR"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "software"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 0.4333,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_009",
+      "invalid_citations": [
+        "ESF-P01-003 Rev G",
+        "ESF-P01-003 Rev F",
+        "MEMO-P01-630 Rev E",
+        "MEMO-P01-631 Rev D",
+        "MEMO-P01-636 Rev A",
+        "MEMO-P01-654 Rev A",
+        "MEMO-P01-699 Rev A",
+        "MEMO-P01-776 Rev A",
+        "MEMO-P01-777 Rev A",
+        "RSK-P01-010 Rev E",
+        "RSK-P01-010 Rev A",
+        "RSK-P01-011 Rev C",
+        "RSK-P01-011 Rev A",
+        "RSK-P01-012 Rev C",
+        "RSK-P01-017 Rev A",
+        "TRA-024 Rev A",
+        "VVAM-P01-004 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "VVPR",
+        "PLN"
+      ],
+      "matched_terms": [
+        "count"
+      ],
+      "missing_sources": [
+        "BOM-055"
+      ],
+      "missing_terms": [
+        "obsolete"
+      ],
+      "obsolete_leakage": null,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.6667,
+      "term_score": 0.5,
+      "top_k_hit": false,
+      "total_score": 0.55
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 0.8,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_010",
+      "invalid_citations": [
+        "DHF-008 Rev D",
+        "ECR-577 Rev A",
+        "ECR-587 Rev A",
+        "ECR-593 Rev A",
+        "RSK-P01-016 Rev A",
+        "RSK-P01-017 Rev B",
+        "TRA-025 Rev A",
+        "TRA-026 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "MEMO",
+        "PLN",
+        "VVPR"
+      ],
+      "matched_terms": [
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [
+        "signed"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.3333,
+      "source_score": 1.0,
+      "term_score": 0.5,
+      "top_k_hit": true,
+      "total_score": 0.65
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 1.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_011",
+      "invalid_citations": [],
+      "latest_revision_correct": null,
+      "matched_sources": [
+        "PLN"
+      ],
+      "matched_terms": [
+        "PLN",
+        "count"
+      ],
+      "missing_sources": [],
+      "missing_terms": [],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "source_score": 1.0,
+      "term_score": 1.0,
+      "top_k_hit": true,
+      "total_score": 1.0
+    },
+    {
+      "category": "enumeration_counting",
+      "citation_validity": 0.0,
+      "count_correct": null,
+      "id": "qms_enumeration_counting_012",
+      "invalid_citations": [
+        "3P-P01-32-MX1-REV-F-SGS-IEC-60601-1-2-EMC-SUMMARY-REPORT-A Rev A",
+        "3P-P01-33-INTERTEK-IEC-60601-1-MX1-REV-F-DIELECTRIC-AND-LEAKAGE-SUMMARY-REPORT-A Rev A",
+        "BOM-055 Rev G",
+        "BOM-055 Rev F",
+        "BOM-055 Rev E",
+        "BOM-079 Rev P",
+        "BOM-079 Rev M",
+        "BOM-101 Rev A",
+        "DHF-008 Rev D",
+        "DMR-003 Rev A",
+        "DR-P01-005 Rev G",
+        "ECR-577 Rev A",
+        "ECR-587 Rev A",
+        "ECR-593 Rev A",
+        "ESF-P01-016 Rev A",
+        "IFU-MX1 Rev L",
+        "IFU-MX1 Rev D",
+        "MEMO-P01-412 Rev B",
+        "MEMO-P01-416 Rev A",
+        "MEMO-P01-625 Rev A",
+        "MEMO-P01-630 Rev H",
+        "MEMO-P01-631 Rev F",
+        "MEMO-P01-633 Rev B",
+        "MEMO-P01-634 Rev B",
+        "MEMO-P01-636 Rev B",
+        "MEMO-P01-637 Rev B",
+        "MEMO-P01-638 Rev A",
+        "MEMO-P01-640 Rev C",
+        "MEMO-P01-642 Rev D",
+        "MEMO-P01-654 Rev C",
+        "MEMO-P01-655 Rev C",
+        "MEMO-P01-656 Rev B",
+        "MEMO-P01-657 Rev B",
+        "MEMO-P01-658 Rev A",
+        "MEMO-P01-660 Rev A",
+        "MEMO-P01-662 Rev A",
+        "MEMO-P01-663 Rev A",
+        "MEMO-P01-665 Rev A",
+        "MEMO-P01-670 Rev A",
+        "MEMO-P01-671 Rev A"
+      ],
+      "latest_revision_correct": null,
+      "matched_sources": [],
+      "matched_terms": [],
+      "missing_sources": [
+        "ingest_manifest"
+      ],
+      "missing_terms": [
+        "non-empty",
+        "ingested"
+      ],
+      "obsolete_leakage": false,
+      "passed": true,
+      "recall_at_k": 0.0,
+      "source_score": 0.0,
+      "term_score": 0.0,
+      "top_k_hit": false,
+      "total_score": 0.0
+    }
+  ],
+  "run_context": {
+    "agent_model": "gpt-5.5",
+    "chat_model": "gpt-5.5",
+    "chunk_count": 7778,
+    "corpus_hash": "e1ad1fdd8b70f12b20af12a046ef0f0d2a6050b79ed3246ae31138edeca91caf",
+    "document_count": 189,
+    "embedding_dimensions": 3072,
+    "embedding_model": "text-embedding-3-large",
+    "faiss_index_type": "IndexFlatIP",
+    "git_commit": "52b667c4e4e49ba4f688ab1a666897e6a5dbd733",
+    "index_manifest": ".data/qms-index/manifest.json",
+    "index_manifest_hash": "9121fccc0e4a1bb68e70a79b49fdac0b92662c8c5e027b13c0d1a66f3a83baf8",
+    "metadata_only_count": 24,
+    "model_config": {
+      "agent_model": "gpt-5.5",
+      "chat_model": "gpt-5.5",
+      "embedding_dimensions": 3072,
+      "embedding_model": "text-embedding-3-large",
+      "query_model": "gpt-5.4-mini",
+      "reranker_model": "Qwen/Qwen3-Reranker-4B"
+    },
+    "query_model": "gpt-5.4-mini",
+    "reranker_model": "Qwen/Qwen3-Reranker-4B",
+    "retrieval_mode": "local",
+    "timestamp": "2026-05-07-040446",
+    "vector_index": "faiss"
+  },
+  "summary": {
+    "average_citation_validity": 0.3773,
+    "average_recall_at_k": 0.4504,
+    "average_score": 0.5812,
+    "average_source_score": 0.5714,
+    "average_term_score": 0.5853,
+    "by_category": {
+      "compliance_cross_reference": {
+        "average_recall_at_k": 0.1528,
+        "average_score": 0.2875,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.25,
+        "total": 12
+      },
+      "content_extraction_synthesis": {
+        "average_recall_at_k": 0.7083,
+        "average_score": 0.7375,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.75,
+        "total": 12
+      },
+      "cross_document_analysis": {
+        "average_recall_at_k": 0.0555,
+        "average_score": 0.5556,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.1667,
+        "total": 12
+      },
+      "enumeration_counting": {
+        "average_recall_at_k": 0.7361,
+        "average_score": 0.6625,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.8333,
+        "total": 12
+      },
+      "exploratory_search": {
+        "average_recall_at_k": 0.3056,
+        "average_score": 0.6292,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.4167,
+        "total": 12
+      },
+      "known_item_retrieval": {
+        "average_recall_at_k": 0.5833,
+        "average_score": 0.6333,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.5833,
+        "total": 12
+      },
+      "revision_change_tracking": {
+        "average_recall_at_k": 0.6111,
+        "average_score": 0.5625,
+        "pass_rate": 1.0,
+        "passed": 12,
+        "top_k_hit_rate": 0.6667,
+        "total": 12
+      }
+    },
+    "count_accuracy": null,
+    "latest_revision_accuracy": 1.0,
+    "obsolete_leakage_rate": 0.3,
+    "passed": 84,
+    "top_k_hit_rate": 0.5238,
+    "total": 84
+  }
+}

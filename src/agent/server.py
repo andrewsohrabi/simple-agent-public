@@ -1,31 +1,22 @@
-from pathlib import Path
-
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import json
 
-from agent.chat_service import (
-    DEFAULT_CHAT_MODEL,
-    DEFAULT_EXTRACTOR_MODEL,
-    DEFAULT_FACTS_EXTRACTOR,
-    DEMO_USER_DEFAULT,
-    build_system_prompt_preview,
-    delete_memory_snapshot,
-    finalize_chat_session,
-    get_backend_health,
-    list_demo_users,
-    load_demo_user,
-    read_facts_events_snapshot,
-    read_memory_snapshot,
-    run_chat_turn,
-)
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+import os
+from pydantic import BaseModel, Field
+
+from agent.config import load_config
+from agent.search.service import QmsSearchService, normalize_search_mode
+from agent.search.sqlite_store import SearchStore
+from agent.search.stats import collect_stats
 
 load_dotenv()
-
-MEMORY_ROOT = Path("memory_store")
+config = load_config()
 
 app = FastAPI()
+_SEARCH_SERVICE: QmsSearchService | None = None
+_SEARCH_SERVICE_FACTORY = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,7 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class Message(BaseModel):
     role: str
     content: str
@@ -42,138 +32,267 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[Message]
-    memoryType: str = "none"
-    userId: str = "demo_user"
-    model: str | None = None
-    factsExtractor: str = DEFAULT_FACTS_EXTRACTOR
-    extractorModel: str | None = None
+    mode: str = "auto"
+    limit: int = Field(default=16, ge=1, le=50)
 
 
-class DemoUserLoadRequest(BaseModel):
-    demoUser: str = DEMO_USER_DEFAULT
+class SearchRequest(BaseModel):
+    query: str
+    mode: str = "auto"
+    limit: int = Field(default=16, ge=1, le=50)
 
 
-class FinalizeSessionRequest(BaseModel):
-    messages: list[Message]
-    memoryType: str = "none"
-    userId: str = "demo_user"
-    factsExtractor: str = DEFAULT_FACTS_EXTRACTOR
-    extractorModel: str | None = None
+def _search_service() -> QmsSearchService:
+    global _SEARCH_SERVICE, _SEARCH_SERVICE_FACTORY
+    factory = QmsSearchService
+    if _SEARCH_SERVICE is None or _SEARCH_SERVICE_FACTORY is not factory:
+        _SEARCH_SERVICE = factory(config, use_hash_embeddings=config.use_hash_embeddings)
+        _SEARCH_SERVICE_FACTORY = factory
+    return _SEARCH_SERVICE
 
 
-def build_memory_response(
-    memory_type: str,
-    user_id: str,
-    *,
-    snapshot: tuple[object, Path | None] | None = None,
-) -> dict[str, object]:
-    """Build the shared memory payload returned by inspection and mutation routes."""
-    # GET, DELETE, and finalize all reuse this builder so the frontend sees one
-    # stable response shape no matter how the memory snapshot was produced.
-    memory, memory_path = snapshot or read_memory_snapshot(memory_type, MEMORY_ROOT, user_id)
-    facts_events, facts_events_path = read_facts_events_snapshot(
-        memory_type,
-        MEMORY_ROOT,
-        user_id,
+def _store() -> SearchStore:
+    return SearchStore(config.index_dir / "qms.sqlite")
+
+
+def _validate_mode(mode: str) -> str:
+    try:
+        return normalize_search_mode(mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _chat_search_query(messages: list[Message]) -> str:
+    latest_user_index = None
+    for index in range(len(messages) - 1, -1, -1):
+        message = messages[index]
+        if message.role == "user" and message.content.strip():
+            latest_user_index = index
+            break
+    if latest_user_index is None:
+        return ""
+
+    latest_user_message = messages[latest_user_index].content.strip()
+    prior_lines = [
+        f"{message.role}: {message.content.strip()}"
+        for message in messages[:latest_user_index]
+        if message.content.strip()
+    ]
+    if not prior_lines:
+        return latest_user_message
+    return (
+        "Prior conversation:\n"
+        + "\n".join(prior_lines)
+        + "\n\nLatest user message:\n"
+        + latest_user_message
     )
+
+
+def _row_to_document(row) -> dict[str, object]:
     return {
-        "memory": memory,
-        "memoryPath": str(memory_path) if memory_path else None,
-        "factsEvents": facts_events,
-        "factsEventsPath": str(facts_events_path) if facts_events_path else None,
-        "promptPreview": build_system_prompt_preview(
-            memory_type=memory_type,
-            memory_root=MEMORY_ROOT,
-            user_id=user_id,
-        ),
+        "doc_id": row["doc_id"],
+        "revision": row["revision"],
+        "prefix": row["prefix"],
+        "title": row["title"],
+        "revision_rank": row["revision_rank"],
+        "canonical_doc_key": row["canonical_doc_key"],
+        "is_latest": bool(row["is_latest"]),
+        "is_signed": bool(row["is_signed"]),
+        "is_obsolete": bool(row["is_obsolete"]),
+        "filename": row["filename"],
+        "source_path": row["source_path"],
+        "software_version": row["software_version"],
+        "markdown_path": row["markdown_path"],
+        "sha256": row["sha256"],
     }
 
 
-@app.get("/health")
-def health():
-    return get_backend_health(MEMORY_ROOT)
-
-
-@app.get("/demo-users")
-def demo_users():
+def _row_to_chunk(row) -> dict[str, object]:
     return {
-        "defaultDemoUser": DEMO_USER_DEFAULT,
-        "demoUsers": list_demo_users(),
+        "chunk_id": row["chunk_id"],
+        "doc_id": row["doc_id"],
+        "revision": row["revision"],
+        "title": row["title"],
+        "section": row["section"],
+        "ordinal": row["ordinal"],
+        "text": row["text"],
+        "parent_section_id": row["parent_section_id"],
+        "kind": row["kind"],
+        "token_count": row["token_count"],
+        "metadata": json.loads(row["metadata_json"]),
     }
-
-
-@app.post("/demo-users/load")
-def load_demo_user_endpoint(req: DemoUserLoadRequest):
-    return load_demo_user(MEMORY_ROOT, req.demoUser)
 
 
 @app.post("/chat")
 def chat(req: ChatRequest):
-    messages = [{"role": m.role, "content": m.content} for m in req.messages]
-    result = run_chat_turn(
-        messages=messages,
-        memory_type=req.memoryType,
-        user_id=req.userId,
-        memory_root=MEMORY_ROOT,
-        model=req.model or DEFAULT_CHAT_MODEL,
-        facts_extractor=req.factsExtractor,
-        extractor_model=req.extractorModel or DEFAULT_EXTRACTOR_MODEL,
-    )
-    facts_events, facts_events_path = read_facts_events_snapshot(
-        req.memoryType,
-        MEMORY_ROOT,
-        req.userId,
-    )
-    return {
-        "reply": result["reply"],
-        "memory": result["memory"],
-        "memoryPath": result["memory_path"],
-        "factsEvents": facts_events,
-        "factsEventsPath": str(facts_events_path) if facts_events_path else None,
-        "modelUsed": result["model_used"],
-        "promptPreview": result["system_prompt"],
-    }
+    try:
+        search_query = _chat_search_query(req.messages)
+        if not search_query:
+            raise HTTPException(status_code=400, detail="user message is required")
+        mode = _validate_mode(req.mode)
+        service = _search_service()
+        result = service.search(search_query, mode=mode, limit=req.limit)
+        return {"reply": result["answer"], **result}
+    except Exception as exc:
+        if isinstance(exc, HTTPException):
+            raise exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@app.post("/session/finalize")
-def finalize_session(req: FinalizeSessionRequest):
-    messages = [{"role": m.role, "content": m.content} for m in req.messages]
-    finalized_memory = finalize_chat_session(
-        messages=messages,
-        memory_type=req.memoryType,
-        user_id=req.userId,
-        memory_root=MEMORY_ROOT,
-        facts_extractor=req.factsExtractor,
-        extractor_model=req.extractorModel or DEFAULT_EXTRACTOR_MODEL,
-    )
-    _, memory_path = read_memory_snapshot(req.memoryType, MEMORY_ROOT, req.userId)
-    snapshot = None
-    if memory_path is not None:
-        snapshot = (finalized_memory, memory_path)
-    return build_memory_response(req.memoryType, req.userId, snapshot=snapshot)
+@app.post("/search")
+def search(req: SearchRequest):
+    if not req.query.strip():
+        raise HTTPException(status_code=400, detail="query is required")
+    mode = _validate_mode(req.mode)
+    try:
+        service = _search_service()
+        return service.search(req.query, mode=mode, limit=req.limit)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@app.get("/memory")
-def get_memory(
-    memoryType: str = Query(...),
-    userId: str = Query(...),
+@app.get("/stats")
+def stats():
+    return collect_stats(config)
+
+
+@app.get("/index/status")
+def index_status():
+    return collect_stats(config)
+
+
+@app.get("/status")
+def status():
+    return collect_stats(config)
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "model_config": config.model_config()}
+
+
+@app.get("/documents")
+def documents(
+    q: str | None = None,
+    prefix: str | None = None,
+    latest_only: bool = False,
+    include_obsolete: bool = True,
+    limit: int = Query(default=50, ge=1, le=500),
 ):
-    return build_memory_response(memoryType, userId)
+    clauses: list[str] = []
+    values: list[object] = []
+    if q:
+        clauses.append("(lower(doc_id) LIKE ? OR lower(title) LIKE ? OR lower(filename) LIKE ?)")
+        needle = f"%{q.lower()}%"
+        values.extend([needle, needle, needle])
+    if prefix:
+        clauses.append("prefix = ?")
+        values.append(prefix.upper())
+    if latest_only:
+        clauses.append("is_latest = 1")
+    if not include_obsolete:
+        clauses.append("is_obsolete = 0")
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    try:
+        with _store().connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT *
+                FROM documents
+                {where}
+                ORDER BY doc_id, revision_rank DESC
+                LIMIT ?
+                """,
+                [*values, limit],
+            ).fetchall()
+        return {"documents": [_row_to_document(row) for row in rows]}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@app.delete("/memory")
-def clear_memory(
-    memoryType: str = Query(...),
-    userId: str = Query(...),
+@app.get("/documents/{doc_id}")
+def document(
+    doc_id: str,
+    revision: str | None = None,
+    include_chunks: bool = False,
+    chunk_limit: int = Query(default=25, ge=1, le=200),
 ):
-    snapshot = delete_memory_snapshot(memoryType, MEMORY_ROOT, userId)
-    return build_memory_response(memoryType, userId, snapshot=snapshot)
+    clauses = ["doc_id = ?"]
+    values: list[object] = [doc_id.upper()]
+    if revision:
+        clauses.append("revision = ?")
+        values.append(revision.upper())
+    else:
+        clauses.append("is_latest = 1")
+    try:
+        with _store().connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT *
+                FROM documents
+                WHERE {' AND '.join(clauses)}
+                ORDER BY revision_rank DESC
+                LIMIT 1
+                """,
+                values,
+            ).fetchone()
+            if row is None:
+                raise HTTPException(status_code=404, detail="document not found")
+            payload: dict[str, object] = {"document": _row_to_document(row)}
+            if include_chunks:
+                chunk_rows = conn.execute(
+                    """
+                    SELECT *
+                    FROM chunks
+                    WHERE doc_id = ? AND revision = ?
+                    ORDER BY ordinal
+                    LIMIT ?
+                    """,
+                    (row["doc_id"], row["revision"], chunk_limit),
+                ).fetchall()
+                payload["chunks"] = [_row_to_chunk(chunk_row) for chunk_row in chunk_rows]
+            return payload
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/chunks/{chunk_id}")
+def chunk(chunk_id: str):
+    try:
+        with _store().connect() as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM chunks
+                WHERE chunk_id = ?
+                """,
+                (chunk_id,),
+            ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="chunk not found")
+        return {"chunk": _row_to_chunk(row)}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 def main():
     import uvicorn
 
-    uvicorn.run("agent.server:app", host="0.0.0.0", port=8000, reload=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    reload_enabled = os.getenv("UVICORN_RELOAD", "true").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    uvicorn.run("agent.server:app", host=host, port=port, reload=reload_enabled)
 
 
 if __name__ == "__main__":

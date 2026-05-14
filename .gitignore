@@ -25,6 +25,26 @@ uv.lock
 
 # Node
 node_modules/
+frontend/playwright-report/
+frontend/test-results/
+
+# Generated search artifacts. The OpenAI vector assets are committed through
+# Git LFS; SQLite/FTS, hosted OpenAI state, and raw eval traces remain local-only.
+.data/*
+!.data/
+!.data/qms-index/
+.data/qms-index/*
+!.data/qms-index/manifest.json
+!.data/qms-index/vectors.npy
+!.data/qms-index/vector_metadata.json
+data/generated/
+data/raw/
+*.faiss
+.data/openai/
+.data/eval-runs/
+*.sqlite-shm
+*.sqlite-wal
+Example QMS - MedAI/
 
 # Runtime memory artifacts
 memory_store/
@@ -36,7 +56,3 @@ artifacts/
 
 # Local/private assets
 Backend Take Home.pdf
-
-# Keep local working docs out of git; only the repo README stays tracked
-*.md
-!/README.md

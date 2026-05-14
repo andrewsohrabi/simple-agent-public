@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test src/panelState.test.js src/demoUsers.test.js src/scenarios.test.js src/memoryViews.test.js"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@vitejs/plugin-react": "^4.0.0",
     "vite": "^5.0.0"
   }
